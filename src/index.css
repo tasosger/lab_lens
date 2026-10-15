@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  background: #f6f8fb;
+  color: #172033;
+  font-family: system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.starter {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 6rem 1.5rem;
+}
+
+h1 {
+  margin: 0.5rem 0 1rem;
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.2;
+}
+
+.status {
+  color: #16734b;
+  font-weight: 600;
+}
