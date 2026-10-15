@@ -1,5 +1,6 @@
 import { buildProperties } from './properties.ts'
 import { queryExperiments } from './query.ts'
+import { buildStatistics } from './statistics.ts'
 import type { ExperimentQuery, ExperimentRepository } from './types.ts'
 import { parseExperiments } from './validation.ts'
 
@@ -9,6 +10,7 @@ export function createExperimentRepository(data: unknown): ExperimentRepository 
   const byId = new Map(experiments.map((experiment) => [experiment.id, experiment]))
   const properties = buildProperties(experiments)
   const propertiesById = new Map(properties.map((property) => [property.id, property]))
+  const statistics = buildStatistics(experiments, properties)
 
   return Object.freeze({
     list(query: ExperimentQuery = {}) {
@@ -20,6 +22,9 @@ export function createExperimentRepository(data: unknown): ExperimentRepository 
     },
     getProperties() {
       return properties
+    },
+    getStatistics() {
+      return statistics
     },
   })
 }

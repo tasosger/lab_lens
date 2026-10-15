@@ -14,6 +14,12 @@ export interface PropertyDefinition {
   readonly category: 'ingredient' | 'process' | 'measurement'
 }
 
+export interface PropertyStatistics {
+  readonly propertyId: PropertyId
+  readonly average: number | undefined
+  readonly count: number
+}
+
 export type NumericFilter =
   | {
       readonly propertyId: PropertyId
@@ -55,4 +61,5 @@ export interface ExperimentRepository {
   readonly list: (query?: ExperimentQuery) => ExperimentList
   readonly getById: (id: string) => Experiment | undefined
   readonly getProperties: () => readonly PropertyDefinition[]
+  readonly getStatistics: () => readonly PropertyStatistics[]
 }

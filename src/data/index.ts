@@ -12,6 +12,7 @@ export function getExperimentRepository(): ExperimentRepository {
 
 export { createExperimentRepository } from './repository.ts'
 export { getPropertyValue } from './properties.ts'
+export { compareExperiments, type ComparisonRow, type ComparisonValue, type ExperimentComparison } from './comparison.ts'
 export { QueryValidationError } from './query.ts'
 export { DatasetValidationError } from './validation.ts'
 export type {
@@ -26,4 +27,5 @@ export type {
   PropertyDefinition,
   PropertyGroup,
   PropertyId,
+  PropertyStatistics,
 } from './types.ts'

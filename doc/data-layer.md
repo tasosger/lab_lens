@@ -17,6 +17,9 @@ Import from [`src/data/index.ts`](../src/data/index.ts).
 | `list(query?)` | `{ items, total, matched }`: matching records, full dataset count, and matching count. Defaults to all records ordered by ID ascending. |
 | `getById(id)` | The exact experiment, or `undefined`. Independent of list filters. |
 | `getProperties()` | Property definitions for selectors and table columns. |
+| `getStatistics()` | Cached, immutable full-dataset statistics per property: `propertyId`, `average`, and recorded-value `count`. |
+
+Reference averages include zero values and exclude missing measurements. They do not change with search or filters. A property with no recorded values has an `undefined` average and a count of zero.
 
 Example from a module directly inside `src/`:
 
@@ -59,6 +62,12 @@ const result = repository.list({
 ```
 
 `FilterExpression`, `FilterGroup`, and `NumericFilter` are exported from the public API for typed query construction.
+
+## Comparing selected experiments
+
+The public `compareExperiments(experiments, properties, baselineId?)` helper returns immutable comparison rows and the resolved baseline ID. Resolve selected records with `getById` so Explore filters do not remove them from the comparison. Record and property order are preserved. The first record is the fallback when a baseline is absent or no longer selected.
+
+Each row contains its property definition, a `differs` flag, and values with experiment IDs and signed deltas (`value - baseline value`). Comparisons use original numeric precision. Missing and zero values are distinct; all-missing rows are equal. Deltas are `undefined` when either measurement is missing or subtraction exceeds the finite numeric range. An empty selection returns no rows and a `null` baseline.
 
 ## Validation and maintenance
 
