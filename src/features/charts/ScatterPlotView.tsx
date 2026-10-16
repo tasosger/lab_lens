@@ -3,18 +3,21 @@ import { ScatterPlot } from '../../charts/ScatterPlot'
 import { ScatterPlot3D } from '../../charts/ScatterPlot3D'
 import type { OrbitCamera } from '../../charts/projection3D'
 import type { CartesianRange } from '../../charts/types'
-import { PropertySelect } from '../../components/PropertySelect'
 import type { Experiment, PropertyDefinition, PropertyId } from '../../data'
 import { formatValue } from '../experiments/format'
 import { Icon } from '../experiments/Icon'
 import { buildScatterData, buildScatter3DData, type ChartAxes } from './scatterData'
 import type { PropertyRangeFilter } from './propertyRangeFilter'
-import { AxisSwapMenu, type AxisSwap } from './AxisSwapMenu'
+import type { AxisSwap } from './AxisSwapMenu'
+import { ScatterPlotControls } from './ScatterPlotControls'
+import type { ChartType } from './chartConfiguration'
 import './scatterView.css'
 
 interface ScatterPlotViewProps {
+  onTypeChange: (type: ChartType) => void
   id?: string
   filterTarget?: string
+  showControls?: boolean
   experiments: readonly Experiment[]
   matchingIds: readonly string[]
   rangeSelection: CartesianRange | null
@@ -36,7 +39,7 @@ interface ScatterPlotViewProps {
   onResetQuery: () => void
 }
 
-export function ScatterPlotView({ id = 'charts', filterTarget = 'the experiment table', experiments, matchingIds, rangeSelection, hasPlotFilter, onPlotFilter, properties, axes, mode, zPropertyId, camera, onModeChange, onZChange, onCameraChange, selectedIds, isFiltered, onAxisChange, onSwapAxes, onOpen, onResetQuery }: ScatterPlotViewProps) {
+export function ScatterPlotView({ id = 'charts', filterTarget = 'the experiment table', showControls = true, experiments, matchingIds, rangeSelection, hasPlotFilter, onPlotFilter, properties, axes, mode, zPropertyId, camera, onModeChange, onZChange, onCameraChange, selectedIds, isFiltered, onAxisChange, onSwapAxes, onOpen, onResetQuery, onTypeChange }: ScatterPlotViewProps) {
   const xProperty = properties.find((property) => property.id === axes.x)
   const yProperty = properties.find((property) => property.id === axes.y)
   const zProperty = properties.find((property) => property.id === zPropertyId)
@@ -47,19 +50,8 @@ export function ScatterPlotView({ id = 'charts', filterTarget = 'the experiment 
 
   return (
     <section id={id} className="scatter-view" aria-label="Scatterplot">
-      <div className={`chart-controls${mode === '3d' ? ' chart-controls-3d' : ''}`}>
-        <label className="property-select chart-type-select">
-          <span>Chart type</span>
-          <select value={mode} onChange={(event) => onModeChange(event.target.value === '3d' ? '3d' : '2d')}>
-            <option value="2d">2D scatterplot</option>
-            <option value="3d">3D scatterplot</option>
-          </select>
-        </label>
-        <PropertySelect label="X axis" properties={properties} value={axes.x} onChange={(id) => onAxisChange('x', id)} />
-        <PropertySelect label="Y axis" properties={properties} value={axes.y} onChange={(id) => onAxisChange('y', id)} />
-        {mode === '3d' && <PropertySelect label="Z axis" properties={properties} value={zPropertyId} onChange={onZChange} />}
-        <AxisSwapMenu key={mode} threeDimensional={mode === '3d'} disabled={!xProperty || !yProperty || (mode === '3d' && !zProperty)} onSwap={onSwapAxes} />
-      </div>
+      {showControls && <div id={`${id}-controls`}><ScatterPlotControls properties={properties} axes={axes} mode={mode} zPropertyId={zPropertyId}
+        onModeChange={onModeChange} onAxisChange={onAxisChange} onZChange={onZChange} onSwapAxes={onSwapAxes} onTypeChange={onTypeChange} /></div>}
 
       {!xProperty || !yProperty || (mode === '3d' && !zProperty) ? (
         <div className="empty-state"><h3>No properties to plot</h3><p>The dataset needs numeric input or output properties to create a chart.</p></div>
@@ -88,7 +80,7 @@ export function ScatterPlotView({ id = 'charts', filterTarget = 'the experiment 
               formatValue={formatValue} onPointActivate={onOpen} />}
           </div>
           <p className="chart-help">{mode === '3d'
-            ? 'Drag to rotate and tilt · Scroll to zoom · Double-click the background to reset · Click a point for details.'
+            ? 'Drag to rotate and tilt · Scroll or pinch to zoom · Shift-drag to pan · Double-click the background to reset · Click a point for details.'
             : `In inspect mode, hover or focus for values; click or press Enter to open details. Plot ranges also filter ${filterTarget}. Faded, hollow points remain as context. Drawing a new range replaces this plot’s previous range.`}</p>
           <ChartDataTable points={matchingPoints} xLabel={xProperty.name} yLabel={yProperty.name} zLabel={mode === '3d' ? zProperty?.name : undefined} itemLabel="Experiment" formatValue={formatValue} onPointActivate={onOpen} />
         </>

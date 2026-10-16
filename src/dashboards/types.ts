@@ -1,6 +1,8 @@
-import type { FilterExpression } from '../data/types.ts'
 import type { ChartConfiguration } from '../features/charts/chartConfiguration.ts'
 import type { PropertyRangeFilter } from '../features/charts/propertyRangeFilter.ts'
+
+export type DashboardTemplate = 'grid' | 'stack' | 'feature'
+export type DashboardLayout = DashboardTemplate | 'custom'
 
 export interface DashboardWidget {
   readonly id: string
@@ -13,8 +15,7 @@ export interface DashboardWidget {
 export interface Dashboard {
   readonly id: string
   readonly name: string
-  readonly search: string
-  readonly filters: readonly FilterExpression[]
+  readonly layout: DashboardLayout
   readonly widgets: readonly DashboardWidget[]
   readonly createdAt: string
   readonly updatedAt: string

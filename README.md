@@ -41,17 +41,27 @@ Remove experiments from their column headers. Removing the baseline selects the 
 
 Open **Charts**, choose a **Chart type**, and choose an input or output for each axis. The first plot is a 2D scatterplot showing Oven Temperature against Tensile Strength. **Swap axes** exchanges X/Y, or X/Z and Y/Z in 3D. Changing axes redraws immediately; search and nested filters are shared with the experiment table. Axis choices survive switching views.
 
-Choose **3D scatterplot** to add a Z axis (Elongation by default). Drag to rotate and tilt, scroll over the plot to zoom, and double-click the background to reset the camera. All three values appear in point tooltips and the plotted-data table. Chart type, Z-axis choice, and camera settings survive view changes. Existing plot-range filters still apply; switch to 2D to draw another range.
+For a scatterplot, **Add value** adds a Z axis (Elongation by default); remove Z to return to two dimensions. Drag to rotate and tilt, scroll over the plot to zoom, and double-click the background to reset the camera. All three values appear in point tooltips and the plotted-data table. Chart type, Z-axis choice, and camera settings survive view changes. Existing plot-range filters still apply; return to two dimensions to draw another range.
 
-Hover or focus a point to inspect its values; click or press Enter/Space to open the existing details drawer. Selected experiments have darker, outlined markers. **View plotted data** lists every point, including overlapping experiments, with buttons to open their details. Missing axis values are omitted and counted, while zeros remain valid coordinates. Empty results explain how to recover. Histograms are a later extension.
+Hover or focus a point to inspect its values; click or press Enter/Space to open the existing details drawer. Selected experiments have darker, outlined markers. **View chart data** lists every point, including overlapping experiments, with buttons to open their details. Missing axis values are omitted and counted, while zeros remain valid coordinates. Empty results explain how to recover.
+
+Choose **Histogram** under **Chart type** to see the distribution of any input or output. Choose **Auto** bins or a count from 1 to 50. Bars count the current matching experiments; darker segments show the selected subset. Click a bar or a range in **View bin counts** to list its experiments and open their details. Missing measurements are omitted and counted, zeros are included, and identical values form a single bin. Existing search and plot filters still apply. Changing chart types preserves the scatterplot settings.
+
+Choose **Pie chart** to see the share of matching experiments grouped by a property's exact values or equal-width ranges. Slices count experiments, and missing values are excluded from the percentage denominator and reported separately. Click a slice or legend label to inspect its experiments.
+
+Choose **Correlation heatmap** to compare properties. Expand **X axis · columns** and **Y axis · rows** to independently choose any inputs or outputs. Each cell shows Pearson's correlation and its paired experiment count; constant properties or fewer than three pairs show **N/A**. Click a cell to open the corresponding scatterplot with the current filters.
+
+Choose **Parallel coordinates** to follow each experiment across multiple properties. Expand **Axes · left to right** to select properties and reorder them with the arrows. Each axis has its own scale; experiments missing any selected value are omitted and counted. Selected experiments have darker lines. Hover or focus a line to inspect values, or click it to open details; the values table also provides access to overlapping lines.
+
+All five chart types are available in every dashboard plot through **Edit**. **Save dashboard** stores each chart's property choices, grouping, bins, and axis order. Switching types retains their settings; previously saved dashboards continue to load.
 
 The reusable plotting components, numeric scales, axes, responsive frame, and data table live in `src/charts/`. Experiment-specific defaults and the record-to-point adapter live in `src/features/charts/`. See [chart architecture](doc/charts.md) for the extension points.
 
 ## Saved dashboards
 
-Open **Dashboards** in the sidebar for the default **Experiment overview**, which starts with two plots. Create a dashboard, add plots, choose their properties and 2D/3D mode, and use **Save dashboard** to keep its configuration after a refresh. Rename, duplicate, delete, reorder, and choose half/full-width plots. The dashboard list can sort by name or last saved time.
+Expand **Dashboards** in the sidebar to select the default **Experiment overview** or another dashboard. Use **+ Add** to create one, and the sidebar delete control to remove one. In the editor, add plots, open **Edit** for plot settings, choose a layout from the **Template** dropdown, and drag plot handles to rearrange them. Templates change placement only. **Save dashboard** preserves the configuration after a refresh.
 
-Search and nested filters apply to every plot in that dashboard. Brushing a 2D plot filters the other plots; the source plot retains context points for changing its range. Dashboard filters are independent of Explore/Charts. Unsaved drafts survive navigation within the app; the save status indicates whether changes have been written to this browser's local storage. Storage failures are shown without overwriting existing data or reporting a successful save. See [dashboard architecture](doc/dashboards.md).
+Each plot's range filters only that plot; dashboard-wide search and filters are unavailable. Source points remain as context for changing the range. Switching dashboards or leaving warns about unsaved changes. Drafts survive navigation within the app, and failed saves keep the editor open. See [dashboard architecture](doc/dashboards.md).
 
 ## Commands
 
@@ -94,8 +104,8 @@ References: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), 
 - `doc/`: brief component documentation, starting with the [data layer](doc/data-layer.md).
 - `src/App.tsx`: application entry and dataset error state.
 - `src/features/experiments/`: Explore table, filters, details drawer, formatting, styles, and workspace state.
-- `src/features/charts/`: experiment scatterplot view, defaults, and record-to-point adapter.
-- `src/charts/`: reusable chart types, scales, axes, responsive frame, scatterplot, and accessible data table.
+- `src/features/charts/`: chart views, controls, defaults, and experiment data adapters.
+- `src/charts/`: reusable chart renderers, numeric scales, binning, correlation calculations, and accessible data table.
 - `src/components/PropertySelect.tsx`: shared grouped property picker.
 - `src/dashboards/`: dashboard models, validation, defaults, storage, and shared queries.
 - `src/features/dashboards/`: dashboard library, editor, chart cards, and draft state.

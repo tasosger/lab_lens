@@ -8,7 +8,7 @@ export function ChartAxis({ orientation, axis, layout }: {
 }) {
   const horizontal = orientation === 'x'
   const scale = horizontal ? layout.xScale : layout.yScale
-  const ticks = numericTicks(axis.domain, horizontal && layout.width < 500 ? 3 : 5)
+  const ticks = axis.ticks ?? numericTicks(axis.domain, horizontal && layout.width < 500 ? 3 : 5)
 
   return (
     <g className="chart-axis" aria-hidden="true">

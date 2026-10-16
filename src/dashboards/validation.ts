@@ -1,10 +1,11 @@
-import { queryExperiments } from '../data/query.ts'
-import type { FilterExpression, PropertyDefinition, PropertyId } from '../data/types.ts'
+import type { PropertyDefinition, PropertyId } from '../data/types.ts'
 import { normalizeCamera } from '../charts/projection3D.ts'
+import { isHistogramBinCount } from '../charts/histogram.ts'
 import type { CartesianRange } from '../charts/types.ts'
-import type { ChartConfiguration } from '../features/charts/chartConfiguration.ts'
+import { createChartConfiguration, isChartType, type ChartConfiguration } from '../features/charts/chartConfiguration.ts'
 import type { PropertyRangeFilter } from '../features/charts/propertyRangeFilter.ts'
 import type { Dashboard, DashboardStore, DashboardWidget } from './types.ts'
+import { isDashboardLayout } from './layout.ts'
 
 export class DashboardValidationError extends Error {
   constructor(message: string) { super(message); this.name = 'DashboardValidationError' }
@@ -15,8 +16,8 @@ function record(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
-function text(value: unknown, label: string, allowEmpty = false): string {
-  if (typeof value !== 'string' || (!allowEmpty && !value.trim())) throw new DashboardValidationError(`${label} is required.`)
+function text(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !value.trim()) throw new DashboardValidationError(`${label} is required.`)
   return value
 }
 
@@ -40,6 +41,9 @@ function range(value: unknown): CartesianRange {
 /** Decode only persisted fields; UI objects and derived experiment data never enter storage. */
 export function validateDashboard(value: unknown, properties: readonly PropertyDefinition[]): Dashboard {
   const source = record(value)
+  // Older v1 dashboards already store individual widths; preserve their custom layout.
+  const layout = source.layout === undefined ? 'custom' : source.layout
+  if (!isDashboardLayout(layout)) throw new DashboardValidationError('Invalid dashboard layout.')
   const propertiesById = new Map(properties.map(p => [p.id, p]))
   function property(value: unknown, nullable = false): PropertyId | null {
     if (nullable && value === null) return null
@@ -48,15 +52,44 @@ export function validateDashboard(value: unknown, properties: readonly PropertyD
   }
   function configuration(value: unknown): ChartConfiguration {
     const config = record(value)
+    const defaults = createChartConfiguration(properties)
+    function propertyList(value: unknown, fallback: readonly PropertyId[]): PropertyId[] {
+      if (value === undefined) return [...fallback]
+      if (!Array.isArray(value)) throw new DashboardValidationError('Invalid chart property list.')
+      const ids = value.map(id => property(id)!)
+      if (new Set(ids).size !== ids.length) throw new DashboardValidationError('Duplicate chart property.')
+      return ids
+    }
     const axes = record(config.chartAxes)
     const camera = record(config.chartCamera)
+    // Existing v1 dashboards predate histogram settings and remain scatterplots.
+    const chartType = config.chartType === undefined ? 'scatterplot' : config.chartType
+    const histogramBins = config.histogramBins === undefined ? 'auto' : config.histogramBins
+    if (!isChartType(chartType)) throw new DashboardValidationError('Unknown chart type.')
+    if (!isHistogramBinCount(histogramBins)) throw new DashboardValidationError('Invalid histogram bin count.')
+    const pieGrouping = config.pieGrouping === undefined ? defaults.pieGrouping : config.pieGrouping
+    const pieBins = config.pieBins === undefined ? defaults.pieBins : config.pieBins
+    if (pieGrouping !== 'ranges' && pieGrouping !== 'values') throw new DashboardValidationError('Invalid pie grouping.')
+    if (!isHistogramBinCount(pieBins)) throw new DashboardValidationError('Invalid pie bin count.')
     if (config.chartMode !== '2d' && config.chartMode !== '3d') throw new DashboardValidationError('Unknown chart type.')
     if (![camera.yaw, camera.pitch, camera.zoom].every(v => typeof v === 'number' && Number.isFinite(v))) throw new DashboardValidationError('Invalid 3D camera.')
+    if (camera.pan !== undefined && (!Array.isArray(camera.pan) || camera.pan.length !== 2 || !camera.pan.every(v => typeof v === 'number' && Number.isFinite(v)))) {
+      throw new DashboardValidationError('Invalid 3D camera position.')
+    }
     return {
+      chartType,
+      histogramBins,
+      histogramProperty: property(config.histogramProperty === undefined ? axes.y : config.histogramProperty, true),
+      pieProperty: property(config.pieProperty === undefined ? defaults.pieProperty : config.pieProperty, true),
+      pieGrouping, pieBins,
+      heatmapX: propertyList(config.heatmapX, defaults.heatmapX),
+      heatmapY: propertyList(config.heatmapY, defaults.heatmapY),
+      parallelProperties: propertyList(config.parallelProperties, defaults.parallelProperties),
       chartMode: config.chartMode,
       chartAxes: { x: property(axes.x, true), y: property(axes.y, true) },
       chartZ: property(config.chartZ, true),
-      chartCamera: normalizeCamera({ yaw: camera.yaw as number, pitch: camera.pitch as number, zoom: camera.zoom as number }),
+      chartCamera: normalizeCamera({ yaw: camera.yaw as number, pitch: camera.pitch as number, zoom: camera.zoom as number,
+        ...(camera.pan === undefined ? {} : { pan: camera.pan as [number, number] }) }),
     }
   }
   function plotFilter(value: unknown): PropertyRangeFilter | null {
@@ -74,13 +107,10 @@ export function validateDashboard(value: unknown, properties: readonly PropertyD
     if (widget.size !== 'half' && widget.size !== 'full') throw new DashboardValidationError('Invalid plot size.')
     return { id, title: text(widget.title, 'Plot title').trim(), size: widget.size, configuration: configuration(widget.configuration), plotFilter: plotFilter(widget.plotFilter) }
   })
-  if (!Array.isArray(source.filters)) throw new DashboardValidationError('Invalid dashboard filters.')
-  const filters = structuredClone(source.filters) as FilterExpression[]
-  try { queryExperiments([], propertiesById, { filters }) }
-  catch { throw new DashboardValidationError('Dashboard filters contain invalid conditions or unknown properties.') }
+  // Legacy dashboard-wide search/filters are intentionally ignored. Filters now belong to plots.
   return {
-    id: text(source.id, 'Dashboard ID'), name: text(source.name, 'Dashboard name').trim(),
-    search: text(source.search, 'Search', true), filters, widgets,
+    id: text(source.id, 'Dashboard ID'), name: text(source.name, 'Dashboard name').trim(), layout,
+    widgets,
     createdAt: timestamp(source.createdAt), updatedAt: timestamp(source.updatedAt),
   }
 }

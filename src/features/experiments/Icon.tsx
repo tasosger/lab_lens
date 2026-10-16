@@ -1,6 +1,7 @@
-type IconName = 'search' | 'filter' | 'columns' | 'close' | 'arrow' | 'flask' | 'check' | 'chevron' | 'table' | 'chart' | 'swap' | 'dashboard'
+type IconName = 'search' | 'filter' | 'columns' | 'close' | 'arrow' | 'flask' | 'check' | 'chevron' | 'table' | 'chart' | 'swap' | 'dashboard' | 'edit'
 
 const paths: Record<IconName, string> = {
+  edit: 'm16 3 5 5-12 12-6 1 1-6L16 3zm-3 3 5 5',
   dashboard: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
   search: 'm21 21-4.5-4.5 M19 10.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0',
   filter: 'M4 6h16M7 12h10M10 18h4',

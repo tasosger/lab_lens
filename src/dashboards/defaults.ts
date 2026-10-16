@@ -3,7 +3,7 @@ import { createChartConfiguration } from '../features/charts/chartConfiguration.
 import type { Dashboard, DashboardWidget } from './types.ts'
 
 export function createDashboard(id: string, name: string, now: string): Dashboard {
-  return { id, name, search: '', filters: [], widgets: [], createdAt: now, updatedAt: now }
+  return { id, name, layout: 'grid', widgets: [], createdAt: now, updatedAt: now }
 }
 
 export function createDashboardWidget(id: string, properties: readonly PropertyDefinition[]): DashboardWidget {
@@ -27,9 +27,4 @@ export function createDefaultDashboard(properties: readonly PropertyDefinition[]
       } },
     ],
   }
-}
-
-export function duplicateDashboard(source: Dashboard, newId: () => string, now: string): Dashboard {
-  return { ...structuredClone(source), id: newId(), name: `${source.name} copy`, createdAt: now, updatedAt: now,
-    widgets: source.widgets.map(widget => ({ ...structuredClone(widget), id: newId() })) }
 }

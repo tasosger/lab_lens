@@ -2,6 +2,12 @@
 .cartesian-chart > svg { display: block; width: 100%; overflow: visible; }
 .chart-axis text { fill: #647187; font-size: 11px; font-variant-numeric: tabular-nums; }
 .chart-axis .chart-axis-label { fill: #46556d; font-size: 12px; font-weight: 600; }
+.histogram-bar { cursor: pointer; outline: none; }
+.histogram-total { fill: #6c80d7; }
+.histogram-selected { fill: #354eae; }
+.histogram-hit { fill: transparent; }
+.histogram-bar:hover .histogram-hit, .histogram-bar:focus-visible .histogram-hit, .histogram-bar[aria-pressed='true'] .histogram-hit { stroke: #172d6d; stroke-width: 2; }
+.histogram-count { fill: #46556d; font-size: 11px; font-variant-numeric: tabular-nums; }
 .chart-grid-line { stroke: #e9edf4; stroke-width: 1; }
 .scatter-point { cursor: pointer; outline: none; }
 .scatter-hit-area { fill: transparent; }

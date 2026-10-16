@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { PropertyDefinition } from '../../data/types'
-import { createDashboard, duplicateDashboard } from '../../dashboards/defaults'
+import { createDashboard } from '../../dashboards/defaults'
 import { createLocalDashboardStorage } from '../../dashboards/localStorageAdapter'
 import { createDashboardRepository } from '../../dashboards/repository'
 import type { Dashboard } from '../../dashboards/types'
@@ -15,6 +15,7 @@ export function useDashboardLibrary(properties: readonly PropertyDefinition[]) {
   const [saved, setSaved] = useState<readonly Dashboard[]>([])
   const [drafts, setDrafts] = useState<DashboardDraft[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
   const [loadAttempt, setLoadAttempt] = useState(0)
@@ -42,39 +43,48 @@ export function useDashboardLibrary(properties: readonly PropertyDefinition[]) {
   function add(dashboard: Dashboard) {
     setDrafts(previous => [...previous, createDashboardDraft(dashboard)])
     setActiveId(dashboard.id)
+    setRenamingId(dashboard.id)
     setError('')
   }
 
-  function edit(action: DashboardAction) {
-    setDrafts(previous => previous.map(draft => draft.dashboard.id === activeId ? dashboardReducer(draft, action) : draft))
+  function editDashboard(id: string | null, action: DashboardAction) {
+    setDrafts(previous => previous.map(draft => draft.dashboard.id === id ? dashboardReducer(draft, action) : draft))
     setError('')
   }
 
-  function save() {
-    if (!active) return
+  function save(): boolean {
+    if (!active) return false
     try {
       const dashboard = repository.save(active.dashboard)
       setSaved(previous => [...previous.filter(item => item.id !== dashboard.id), dashboard])
       setDrafts(previous => previous.map(draft => draft.dashboard.id === dashboard.id ? { ...draft, dashboard } : draft))
       setError('')
-    } catch (error) { setError(`Dashboard was not saved. ${errorMessage(error)}`) }
+      return true
+    } catch (error) { setError(`Dashboard was not saved. ${errorMessage(error)}`); return false }
   }
 
-  function remove(id: string) {
+  function remove(id: string): boolean {
     try {
       if (saved.some(dashboard => dashboard.id === id)) repository.remove(id)
       setSaved(previous => previous.filter(dashboard => dashboard.id !== id))
       setDrafts(previous => previous.filter(draft => draft.dashboard.id !== id))
       if (activeId === id) setActiveId(drafts.find(draft => draft.dashboard.id !== id)?.dashboard.id ?? null)
+      setRenamingId(current => current === id ? null : current)
       setError('')
-    } catch (error) { setError(`Dashboard was not deleted. ${errorMessage(error)}`) }
+      return true
+    } catch (error) { setError(`Dashboard was not deleted. ${errorMessage(error)}`); return false }
   }
 
   return {
-    saved, drafts, active, ready, error, edit, save, remove,
+    saved, drafts, active, ready, error, renamingId, save, remove,
+    edit: (action: DashboardAction) => editDashboard(activeId, action),
+    rename: (id: string, value: string) => editDashboard(id, { type: 'name', value }),
+    beginRename: (id: string) => setRenamingId(id),
+    finishRename: (id: string) => setRenamingId(current => current === id ? null : current),
     retry: () => setLoadAttempt(value => value + 1),
-    select: (id: string) => { setActiveId(id); setError('') },
+    select: (id: string) => { setActiveId(id); setRenamingId(null); setError('') },
     create: () => add(createDashboard(crypto.randomUUID(), 'Untitled dashboard', new Date().toISOString())),
-    duplicate: () => { if (active) add(duplicateDashboard(active.dashboard, () => crypto.randomUUID(), new Date().toISOString())) },
   }
 }
+
+export type DashboardLibrary = ReturnType<typeof useDashboardLibrary>

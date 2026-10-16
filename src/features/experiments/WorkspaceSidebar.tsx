@@ -1,5 +1,8 @@
 import { Icon } from './Icon'
 import type { WorkspaceView } from './workspaceReducer'
+import { useId, useState } from 'react'
+import { DashboardList } from '../dashboards/DashboardList'
+import type { DashboardLibrary } from '../dashboards/useDashboardLibrary'
 
 interface WorkspaceSidebarProps {
   experimentCount: number
@@ -8,6 +11,10 @@ interface WorkspaceSidebarProps {
   activeView: WorkspaceView
   selectedCount: number
   onNavigate: (view: WorkspaceView) => void
+  dashboardLibrary: DashboardLibrary
+  onSelectDashboard: (id: string) => void
+  onCreateDashboard: () => void
+  onRenameDashboard: (id: string) => void
 }
 
 export function WorkspaceSidebar({
@@ -17,7 +24,13 @@ export function WorkspaceSidebar({
   activeView,
   selectedCount,
   onNavigate,
+  dashboardLibrary,
+  onSelectDashboard,
+  onCreateDashboard,
+  onRenameDashboard,
 }: WorkspaceSidebarProps) {
+  const [dashboardsExpanded, setDashboardsExpanded] = useState(true)
+  const dashboardsId = useId()
   return (
     <aside className="app-sidebar" aria-label="Workspace">
       <div className="brand" aria-label="LabLens">
@@ -57,10 +70,26 @@ export function WorkspaceSidebar({
           <Icon name="chart" />
           <span className="sidebar-link-label">Charts</span>
         </button>
-        <button className="sidebar-link" onClick={() => onNavigate('dashboards')}
-          aria-current={activeView === 'dashboards' ? 'page' : undefined} aria-label="Dashboards" title="Dashboards">
-          <Icon name="dashboard" /><span className="sidebar-link-label">Dashboards</span>
-        </button>
+        <div className="sidebar-dashboards">
+          <div className="sidebar-dashboard-heading">
+            <button className="sidebar-link" onClick={() => onNavigate('dashboards')}
+              aria-current={activeView === 'dashboards' ? 'page' : undefined} aria-label="Dashboards" title="Dashboards">
+              <Icon name="dashboard" /><span className="sidebar-link-label">Dashboards</span>
+            </button>
+            <button className="sidebar-dashboard-toggle" aria-label={dashboardsExpanded ? 'Collapse dashboards' : 'Expand dashboards'}
+              title={dashboardsExpanded ? 'Collapse dashboards' : 'Expand dashboards'} aria-expanded={dashboardsExpanded}
+              aria-controls={dashboardsId} onClick={() => setDashboardsExpanded(!dashboardsExpanded)}>
+              <Icon name="chevron" />
+            </button>
+          </div>
+          <div id={dashboardsId} hidden={!dashboardsExpanded}>
+            {dashboardLibrary.ready ? <DashboardList drafts={dashboardLibrary.drafts} saved={dashboardLibrary.saved}
+              activeId={activeView === 'dashboards' ? dashboardLibrary.active?.dashboard.id : undefined}
+              renamingId={dashboardLibrary.renamingId} onRename={onRenameDashboard} onNameChange={dashboardLibrary.rename} onFinishRename={dashboardLibrary.finishRename}
+              error={dashboardLibrary.error} onSelect={onSelectDashboard} onCreate={onCreateDashboard} onDelete={dashboardLibrary.remove} />
+              : <p className="dashboard-storage-note">{dashboardLibrary.error ? 'Dashboards unavailable' : 'Loading dashboards…'}</p>}
+          </div>
+        </div>
       </nav>
 
       <section className="sidebar-dataset" aria-labelledby="sidebar-dataset-title">

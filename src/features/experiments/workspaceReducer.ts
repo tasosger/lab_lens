@@ -71,6 +71,15 @@ export function getWorkspaceQuery(state: WorkspaceState, { includePlotFilter = t
 export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
     case 'view': return { ...state, activeView: action.view }
+    case 'chart-type':
+    case 'histogram-property':
+    case 'histogram-bins':
+    case 'pie-property':
+    case 'pie-grouping':
+    case 'pie-bins':
+    case 'heatmap-axis':
+    case 'inspect-heatmap-cell':
+    case 'parallel-properties':
     case 'chart-mode':
     case 'chart-z':
     case 'chart-camera':

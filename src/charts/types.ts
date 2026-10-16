@@ -24,6 +24,7 @@ export interface ChartRectangle {
 export interface ChartAxisDefinition {
   readonly label: string
   readonly domain: NumericDomain
+  readonly ticks?: readonly number[]
 }
 
 export interface ScatterPoint {

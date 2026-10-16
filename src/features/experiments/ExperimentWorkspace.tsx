@@ -6,8 +6,12 @@ import {
 } from '../../data'
 import { ExperimentDetails } from './ExperimentDetails'
 import { ComparisonView } from './ComparisonView'
-import { ScatterPlotView } from '../charts/ScatterPlotView'
+import { ExperimentChartView } from '../charts/ExperimentChartView'
 import { DashboardWorkspace } from '../dashboards/DashboardWorkspace'
+import { useDashboardLibrary } from '../dashboards/useDashboardLibrary'
+import { dashboardIsDirty } from '../dashboards/dashboardReducer'
+import { useUnsavedNavigation } from '../../components/useUnsavedNavigation'
+import { UnsavedDashboardDialog } from '../dashboards/UnsavedDashboardDialog'
 import { PlotRangeFilterControls } from '../charts/PlotRangeFilterControls'
 import { rangeForAxes } from '../charts/propertyRangeFilter'
 import { FilterGroupEditor } from './FilterGroupEditor'
@@ -30,6 +34,11 @@ const viewTargets: Record<WorkspaceView, string> = { explore: 'experiments', com
 export function ExperimentWorkspace({ repository }: { repository: ExperimentRepository }) {
   const properties = repository.getProperties()
   const [state, dispatch] = useReducer(workspaceReducer, properties, createWorkspaceState)
+  const dashboardLibrary = useDashboardLibrary(properties)
+  const dashboardNavigation = useUnsavedNavigation(
+    state.activeView === 'dashboards' && Boolean(dashboardLibrary.active && dashboardIsDirty(dashboardLibrary.active.dashboard, dashboardLibrary.saved)),
+    dashboardLibrary.save,
+  )
   const [openControl, setOpenControl] = useState<'filters' | 'columns' | null>(null)
   const [dashboardDetailHidden, setDashboardDetailHidden] = useState(false)
   const filterButton = useRef<HTMLButtonElement>(null)
@@ -61,14 +70,37 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
 
   useEffect(() => {
     if (previousView.current !== state.activeView) {
-      pageHeading.current?.focus()
+      // Creation/renaming gives focus to the sidebar input instead of the page heading.
+      if (!(state.activeView === 'dashboards' && dashboardLibrary.renamingId)) pageHeading.current?.focus()
       previousView.current = state.activeView
     }
-  }, [state.activeView])
+  }, [state.activeView, dashboardLibrary.renamingId])
 
   function navigate(view: WorkspaceView) {
+    if (view === state.activeView) return
+    dashboardNavigation.request(() => showView(view))
+  }
+
+  function showView(view: WorkspaceView) {
     setOpenControl(null)
     dispatch({ type: 'view', view })
+  }
+
+  function selectDashboard(id: string) {
+    if (state.activeView === 'dashboards' && dashboardLibrary.active?.dashboard.id === id) return
+    dashboardNavigation.request(() => { dashboardLibrary.select(id); showView('dashboards') })
+  }
+
+  function createDashboard() {
+    dashboardNavigation.request(() => { dashboardLibrary.create(); showView('dashboards') })
+  }
+
+  function renameDashboard(id: string) {
+    if (state.activeView === 'dashboards' && dashboardLibrary.active?.dashboard.id === id) {
+      dashboardLibrary.beginRename(id)
+    } else {
+      dashboardNavigation.request(() => { dashboardLibrary.select(id); dashboardLibrary.beginRename(id); showView('dashboards') })
+    }
   }
 
   function closeControl() {
@@ -106,19 +138,26 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
         activeView={state.activeView}
         selectedCount={state.selectedIds.length}
         onNavigate={navigate}
+        dashboardLibrary={dashboardLibrary}
+        onSelectDashboard={selectDashboard}
+        onCreateDashboard={createDashboard}
+        onRenameDashboard={renameDashboard}
       />
+      {dashboardNavigation.pending && <UnsavedDashboardDialog name={dashboardLibrary.active?.dashboard.name ?? ''}
+        error={dashboardLibrary.error} onDecide={dashboardNavigation.decide} />}
 
       <main className="workspace">
         <div className="page-heading">
           <div>
-            <h1 id="experiments-heading" ref={pageHeading} tabIndex={-1}>
-              {viewHeadings[state.activeView]}
+            <h1 id="experiments-heading" className={state.activeView === 'dashboards' ? 'dashboard-page-title' : undefined} ref={pageHeading} tabIndex={-1}>
+              {state.activeView === 'dashboards' && dashboardLibrary.active
+                ? dashboardLibrary.active.dashboard.name || 'Untitled dashboard' : viewHeadings[state.activeView]}
             </h1>
             {state.activeView === 'compare' && (
               <p className="comparison-page-description">Inspect values and differences across your selected experiments.</p>
             )}
             {state.activeView === 'charts' && (
-              <p className="comparison-page-description">Explore relationships between inputs and outputs. Choose a property for each axis.</p>
+              <p className="comparison-page-description">Explore distributions and relationships between inputs and outputs.</p>
             )}
           </div>
           {state.selectedIds.length > 0 && (
@@ -153,7 +192,7 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
           />
         )}
 
-        <DashboardWorkspace active={state.activeView === 'dashboards'} repository={repository} selectedIds={state.selectedIds}
+        <DashboardWorkspace active={state.activeView === 'dashboards'} library={dashboardLibrary} repository={repository} selectedIds={state.selectedIds}
           onOpen={(id, hidden) => { setDashboardDetailHidden(hidden); dispatch({ type: 'open-experiment', id }) }} />
 
         <section
@@ -325,29 +364,28 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
             <span className="results-hint">
               {hiddenSelectionCount > 0
                 ? `${hiddenSelectionCount} selected outside current results`
-                : state.activeView === 'charts' ? 'Each point is one experiment' : 'Select experiments to compare'}
+                : state.activeView === 'charts' ? {
+                  scatterplot: 'Each point is one experiment',
+                  histogram: 'Each bar counts experiments in a value range',
+                  pie: 'Each slice shows a share of matching experiments',
+                  heatmap: 'Compare property correlations across matching experiments',
+                  parallel: 'Follow each experiment across its input and output values',
+                }[state.chartType] : 'Select experiments to compare'}
             </span>
           </div>
 
           {state.activeView === 'charts' && (
-            <ScatterPlotView
+            <ExperimentChartView
               experiments={chartContext}
               matchingIds={results.items.map((experiment) => experiment.id)}
               rangeSelection={rangeForAxes(state.plotFilter, state.chartAxes)}
               hasPlotFilter={Boolean(state.plotFilter)}
               onPlotFilter={(filter) => dispatch({ type: 'set-plot-filter', filter })}
               properties={properties}
-              axes={state.chartAxes}
-              mode={state.chartMode}
-              zPropertyId={state.chartZ}
-              camera={state.chartCamera}
-              onModeChange={(mode) => dispatch({ type: 'chart-mode', mode })}
-              onZChange={(propertyId) => dispatch({ type: 'chart-z', propertyId })}
-              onCameraChange={(camera) => dispatch({ type: 'chart-camera', camera })}
+              configuration={state}
+              onChartAction={dispatch}
               selectedIds={state.selectedIds}
               isFiltered={isFiltered}
-              onAxisChange={(axis, propertyId) => dispatch({ type: 'chart-axis', axis, propertyId })}
-              onSwapAxes={(pair) => dispatch({ type: 'swap-chart-axes', pair })}
               onOpen={(id) => dispatch({ type: 'open-experiment', id })}
               onResetQuery={() => dispatch({ type: 'reset-query' })}
             />

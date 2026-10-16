@@ -1,5 +1,19 @@
-.chart-controls { display: grid; grid-template-columns: minmax(150px, 1fr) repeat(2, minmax(0, 1fr)) auto; align-items: end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); background: var(--surface-muted); }
-.chart-controls-3d { grid-template-columns: minmax(150px, 1fr) repeat(3, minmax(0, 1fr)) auto; }
+.chart-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); background: var(--surface-muted); }
+.chart-controls > .property-select, .chart-axis-control { flex: 1 1 160px; min-width: 0; }
+.chart-controls > .chart-type-select { flex: 0 1 150px; }
+.chart-controls > .histogram-bins { flex: 0 1 120px; }
+.histogram-inspector { margin: 0 24px 20px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-muted); }
+.histogram-inspector-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.histogram-inspector h3 { font-size: 13px; overflow-wrap: anywhere; }
+.histogram-inspector p { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.histogram-inspector ul { max-height: 240px; overflow: auto; margin: 10px 0 0; padding: 0; list-style: none; }
+.histogram-inspector li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 6px 0; font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chart-axis-control { display: flex; align-items: flex-end; gap: 6px; }
+.chart-remove-value { flex-shrink: 0; height: 42px; }
+.chart-value-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.chart-value-actions .button { font-size: 12px; }
+.chart-value-count { padding: 2px 5px; border-radius: 5px; background: #f0f3f9; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.chart-value-error { flex-basis: 100%; color: #a63b35; font-size: 12px; line-height: 1.6; }
 .chart-axis-swaps { position: relative; }
 .chart-axis-swaps > summary { list-style: none; font-size: 12px; cursor: pointer; }
 .chart-axis-swaps > summary::-webkit-details-marker { display: none; }
@@ -19,7 +33,7 @@
 .plot-filter-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
 .plot-filter-heading p { flex: 1; min-width: 180px; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
-  .chart-controls { padding: 18px; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-controls { padding: 18px; gap: 12px; }
   .chart-axis-swaps { justify-self: start; }
   .chart-swap-options { right: auto; left: 0; }
   .chart-summary { padding-left: 18px; padding-right: 18px; }

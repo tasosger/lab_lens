@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { numericDomain } from '../src/charts/numericScale.ts'
-import { cameraAfterDrag, cameraAfterWheel, create3DProjector, DEFAULT_ORBIT_CAMERA, isRotationDrag, normalizeCamera, projectUnit3D } from '../src/charts/projection3D.ts'
+import { cameraAfterDrag, cameraAfterPan, cameraAfterWheel, cameraAtZoom, create3DProjector, DEFAULT_ORBIT_CAMERA, interpolateZoomCamera, isRotationDrag, MAX_ZOOM, MIN_ZOOM, normalizeCamera, projectUnit3D, type OrbitCamera } from '../src/charts/projection3D.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
 import { createExperimentRepository } from '../src/data/repository.ts'
 import { buildScatter3DData, defaultChartAxes, defaultChartZ } from '../src/features/charts/scatterData.ts'
@@ -76,8 +76,8 @@ describe('3D projection and camera', () => {
   it('normalizes wheel delta modes, limits zoom, and ignores invalid or horizontal-only scrolls', () => {
     assert.deepEqual(cameraAfterWheel(DEFAULT_ORBIT_CAMERA, 3, 1), cameraAfterWheel(DEFAULT_ORBIT_CAMERA, 48, 0))
     assert.deepEqual(cameraAfterWheel(DEFAULT_ORBIT_CAMERA, 0.1, 2), cameraAfterWheel(DEFAULT_ORBIT_CAMERA, 80, 0))
-    assert.equal(cameraAfterWheel({ ...DEFAULT_ORBIT_CAMERA, zoom: 1.4 }, -10000).zoom, 1.4)
-    assert.equal(cameraAfterWheel({ ...DEFAULT_ORBIT_CAMERA, zoom: 0.6 }, 10000).zoom, 0.6)
+    assert.equal(cameraAfterWheel({ ...DEFAULT_ORBIT_CAMERA, zoom: MAX_ZOOM }, -10000).zoom, MAX_ZOOM)
+    assert.equal(cameraAfterWheel({ ...DEFAULT_ORBIT_CAMERA, zoom: MIN_ZOOM }, 10000).zoom, MIN_ZOOM)
     assert.strictEqual(cameraAfterWheel(DEFAULT_ORBIT_CAMERA, 0), DEFAULT_ORBIT_CAMERA)
     assert.strictEqual(cameraAfterWheel(DEFAULT_ORBIT_CAMERA, NaN), DEFAULT_ORBIT_CAMERA)
     assert.strictEqual(cameraAfterWheel(DEFAULT_ORBIT_CAMERA, Infinity), DEFAULT_ORBIT_CAMERA)
@@ -108,8 +108,8 @@ describe('3D projection and camera', () => {
   })
 
   it('clamps tilt and zoom, wraps rotation, and distinguishes clicks from rotation drags', () => {
-    assert.deepEqual(normalizeCamera({ yaw: 725, pitch: 1000, zoom: 100 }), { yaw: 5, pitch: 75, zoom: 1.4 })
-    assert.deepEqual(normalizeCamera({ yaw: -725, pitch: -1000, zoom: 0 }), { yaw: -5, pitch: -75, zoom: 0.6 })
+    assert.deepEqual(normalizeCamera({ yaw: 725, pitch: 1000, zoom: 100 }), { yaw: 5, pitch: 75, zoom: MAX_ZOOM })
+    assert.deepEqual(normalizeCamera({ yaw: -725, pitch: -1000, zoom: 0 }), { yaw: -5, pitch: -75, zoom: MIN_ZOOM })
     assert.deepEqual(normalizeCamera({ yaw: NaN, pitch: Infinity, zoom: NaN }), DEFAULT_ORBIT_CAMERA)
     assert.equal(isRotationDrag(1, 1), false)
     assert.equal(isRotationDrag(4, 0), true)
@@ -125,6 +125,58 @@ describe('3D projection and camera', () => {
     const zoomed = projectUnit3D([1, 0, 1], { ...camera, zoom: 1.4 }, 800, 400)
     assert.ok(Math.abs((zoomed.x - 400) / (normal.x - 400) - 1.4) < 1e-10)
     assert.equal(zoomed.depth, normal.depth)
+  })
+
+  it('supports close inspection and a wide overview without large wheel jumps', () => {
+    let camera = DEFAULT_ORBIT_CAMERA
+    const smallStep = cameraAfterWheel(camera, -1)
+    const wheelStep = cameraAfterWheel(camera, -10000)
+    assert.ok(smallStep.zoom > 1 && smallStep.zoom < 1.01)
+    assert.ok(wheelStep.zoom > 1 && wheelStep.zoom < 1.2)
+    for (let step = 0; step < 40; step++) camera = cameraAfterWheel(camera, -100)
+    assert.equal(camera.zoom, 6)
+    const atLimit = camera
+    assert.strictEqual(cameraAfterWheel(camera, -100, 0, { x: 0.4, y: -0.3 }), atLimit)
+    for (let step = 0; step < 40; step++) camera = cameraAfterWheel(camera, 100)
+    assert.equal(camera.zoom, 0.25)
+    assert.deepEqual(cameraAfterWheel(DEFAULT_ORBIT_CAMERA, -5, 0, undefined, true), cameraAfterWheel(DEFAULT_ORBIT_CAMERA, -20))
+  })
+
+  it('keeps the point under the mouse stationary throughout the zoom animation', () => {
+    const point = [0.4, -0.7, 0.3] as const
+    const camera: OrbitCamera = { yaw: 55, pitch: -20, zoom: 1.2, pan: [0.1, -0.05] }
+    for (const [width, height] of [[800, 440], [320, 300]]) {
+      const before = projectUnit3D(point, camera, width!, height!)
+      const anchor = { x: before.x / width! - 0.5, y: before.y / height! - 0.5 }
+      for (const zoom of [0.5, 3.6, MAX_ZOOM]) {
+        const target = cameraAtZoom(camera, zoom, anchor)
+        for (const progress of [0, 0.1, 0.5, 0.9, 1]) {
+          const frame = interpolateZoomCamera(camera, target, progress)
+          const after = projectUnit3D(point, frame, width!, height!)
+          assert.ok(Math.abs(after.x - before.x) < 1e-10)
+          assert.ok(Math.abs(after.y - before.y) < 1e-10)
+          assert.equal(after.depth, before.depth)
+        }
+      }
+      const roundTrip = cameraAfterWheel(cameraAfterWheel(camera, -100, 0, anchor), 100, 0, anchor)
+      assert.ok(Math.abs(roundTrip.zoom - camera.zoom) < 1e-10)
+      assert.ok(Math.abs(roundTrip.pan![0] - camera.pan![0]) < 1e-10)
+      assert.ok(Math.abs(roundTrip.pan![1] - camera.pan![1]) < 1e-10)
+    }
+  })
+
+  it('pans a magnified view without rotating or scaling it and keeps offsets valid', () => {
+    const camera = { yaw: 20, pitch: 30, zoom: 4 }
+    const panned = cameraAfterPan(camera, 0.1, -0.2)
+    const before = projectUnit3D([1, 0, 1], camera, 800, 400)
+    const after = projectUnit3D([1, 0, 1], panned, 800, 400)
+    assert.ok(Math.abs(after.x - before.x - 80) < 1e-10)
+    assert.ok(Math.abs(after.y - before.y + 80) < 1e-10)
+    assert.equal(panned.zoom, camera.zoom)
+    assert.equal(panned.yaw, camera.yaw)
+    assert.equal(panned.pitch, camera.pitch)
+    assert.deepEqual(normalizeCamera({ ...camera, pan: [NaN, Infinity] }).pan, [0, 0])
+    assert.deepEqual(cameraAfterPan(camera, 100, -100).pan, [MAX_ZOOM, -MAX_ZOOM])
   })
 })
 

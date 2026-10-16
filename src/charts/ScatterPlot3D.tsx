@@ -49,7 +49,7 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
       <div ref={container} className={`cartesian-chart orbit-chart${rotating ? ' orbit-chart-rotating' : ''}`}>
         <svg ref={canvas} viewBox={`0 0 ${width} ${height}`} role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} {...handlers}>
           <title id={`${id}-title`}>{`3D scatterplot: ${xLabel}, ${yLabel}, ${zLabel}`}</title>
-          <desc id={`${id}-description`}>Drag to rotate and tilt. Scroll to zoom. Double-click the background to reset the view. Hover or focus points for values; click or press Enter to open details. The data table includes every matching point.</desc>
+          <desc id={`${id}-description`}>Drag to rotate and tilt. Scroll or pinch to zoom toward the pointer. Shift-drag to pan. Double-click the background to reset the view. Hover or focus points for values; click or press Enter to open details. The data table includes every matching point.</desc>
           <g aria-hidden="true" className="orbit-grid">
             <polygon points={[0, 1, 3, 2].map((index) => { const point = unit(corners[index]!); return `${point.x},${point.y}` }).join(' ')} />
             {edges.map(([a, b]) => {
