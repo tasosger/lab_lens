@@ -2,7 +2,7 @@
 
 A React + TypeScript experiment explorer using Vite. The Explore page reads the supplied JSON through a validated, read-only data API.
 
-Search experiment IDs, sort measurements, choose visible columns, and combine numeric conditions in nested filter groups. Each group has its own Match all (AND) or Match any (OR) setting, allowing both operators in one query. Filters include not equal and inclusive ranges. Open an experiment to inspect all its inputs and outputs, or select two to four experiments for side-by-side comparison. Selections remain available when search or filters hide their rows. Charts are planned for later.
+Search experiment IDs, sort measurements, choose visible columns, and combine numeric conditions in nested filter groups. Each group has its own Match all (AND) or Match any (OR) setting, allowing both operators in one query. Filters include not equal and inclusive ranges. Open an experiment to inspect all its inputs and outputs, select 2 to 100 experiments for side-by-side comparison, or plot two properties in Charts. Selections remain available when search or filters hide their rows.
 
 Drag the details drawer's left edge to widen or narrow it. The grip also supports left/right arrow keys, Shift for larger steps, and Home/End for minimum/maximum width. On small screens, details fill the screen. Every input and output shows its full-dataset average and an above, below, or at-average indicator. Averages include zeros, exclude missing values, and stay fixed when you filter the table.
 
@@ -31,11 +31,19 @@ Groups can contain further groups. Each group's border shows which conditions it
 
 ## Comparing experiments
 
-Select two to four experiment checkboxes, then choose **Compare selected**, or open **Compare** in the sidebar. The comparison shows all outputs followed by all inputs, regardless of which columns or filters you selected in Explore.
+Select 2 to 100 experiment checkboxes, then choose **Compare selected**, or open **Compare** in the sidebar. The comparison shows all outputs followed by all inputs, regardless of which columns or filters you selected in Explore.
 
 The first selected experiment is the initial baseline. Choose another in **Baseline experiment** to update signed differences (`experiment value - baseline value`). **Show differences only** hides identical rows. Differences use original numeric values, including zero; missing measurements display as an em dash and cannot produce a delta. Increasing and decreasing values are not quality ratings.
 
 Remove experiments from their column headers. Removing the baseline selects the first remaining experiment as the new reference; fewer than two selections shows guidance to select another. **Edit selection** returns to Explore without clearing search, filters, visible columns, sorting, or selections. Comparison preferences also survive switching views. A page refresh resets workspace state.
+
+## Exploring charts
+
+Open **Charts** in the sidebar and choose an input or output for each axis. The first plot shows Oven Temperature against Tensile Strength. **Swap axes** reverses them. Changing axes redraws the scatterplot immediately; search and nested filters are shared with the experiment table. Axis choices survive switching views.
+
+Hover or focus a point to inspect its values; click or press Enter/Space to open the existing details drawer. Selected experiments have darker, outlined markers. **View plotted data** lists every point, including overlapping experiments, with buttons to open their details. Missing axis values are omitted and counted, while zeros remain valid coordinates. Empty results explain how to recover. Histograms are a later extension.
+
+The reusable plotting components, numeric scales, axes, responsive frame, and data table live in `src/charts/`. Experiment-specific defaults and the record-to-point adapter live in `src/features/charts/`. See [chart architecture](doc/charts.md) for the extension points.
 
 ## Commands
 
@@ -51,6 +59,9 @@ Remove experiments from their column headers. Removing the baseline selects the 
 - `doc/`: brief component documentation, starting with the [data layer](doc/data-layer.md).
 - `src/App.tsx`: application entry and dataset error state.
 - `src/features/experiments/`: Explore table, filters, details drawer, formatting, styles, and workspace state.
+- `src/features/charts/`: experiment scatterplot view, defaults, and record-to-point adapter.
+- `src/charts/`: reusable chart types, scales, axes, responsive frame, scatterplot, and accessible data table.
+- `src/components/PropertySelect.tsx`: shared grouped property picker.
 - `src/main.tsx`: React entry point.
 - `src/index.css`: base stylesheet.
 - `vite.config.ts`: Vite configuration.

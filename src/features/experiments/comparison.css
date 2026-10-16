@@ -26,8 +26,8 @@
 .comparison-difference-label { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; font-weight: 400; }
 .comparison-value { display: block; font-size: 15px; font-variant-numeric: tabular-nums; }
 .comparison-delta { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.comparison-delta.delta-positive { color: #3559b0; }
-.comparison-delta.delta-negative { color: #78519a; }
+.comparison-delta.delta-positive { color: #15803d; }
+.comparison-delta.delta-negative { color: #b91c1c; }
 .comparison-empty { text-align: center; padding: 44px 24px; }
 .comparison-empty h2 { font-size: 18px; font-weight: 600; }
 .comparison-empty p { margin: 12px 0 22px; color: var(--muted); font-size: 13px; line-height: 1.7; }

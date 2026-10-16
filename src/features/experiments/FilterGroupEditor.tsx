@@ -1,9 +1,10 @@
-import { useRef, useState, type Dispatch } from 'react'
-import type { PropertyDefinition } from '../../data'
+import { useId, useRef, useState, type Dispatch } from 'react'
+import type { NumericFilter, PropertyDefinition } from '../../data'
 import { FilterBuilder } from './FilterBuilder'
 import {
   describeFilterExpression,
   isAppliedGroup,
+  type AppliedFilter,
   type AppliedFilterGroup,
 } from './filterTree'
 import { Icon } from './Icon'
@@ -75,19 +76,15 @@ export function FilterGroupEditor({ group, properties, dispatch, onRemove }: {
                 }}
               />
             ) : (
-              <div className="filter-condition">
-                <span>{describeFilterExpression(node.condition, properties)}</span>
-                <button
-                  className="chip-remove"
-                  aria-label={`Remove filter ${describeFilterExpression(node.condition, properties)}`}
-                  onClick={() => {
-                    dispatch({ type: 'remove-filter', id: node.id })
-                    addConditionButton.current?.focus()
-                  }}
-                >
-                  <Icon name="close" />
-                </button>
-              </div>
+              <FilterConditionEditor
+                filter={node}
+                properties={properties}
+                onApply={(condition) => dispatch({ type: 'update-filter', id: node.id, condition })}
+                onRemove={() => {
+                  dispatch({ type: 'remove-filter', id: node.id })
+                  addConditionButton.current?.focus()
+                }}
+              />
             )}
           </div>
         ))}
@@ -120,5 +117,55 @@ export function FilterGroupEditor({ group, properties, dispatch, onRemove }: {
         />
       )}
     </fieldset>
+  )
+}
+
+function FilterConditionEditor({ filter, properties, onApply, onRemove }: {
+  filter: AppliedFilter
+  properties: readonly PropertyDefinition[]
+  onApply: (condition: NumericFilter) => void
+  onRemove: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const editButton = useRef<HTMLButtonElement>(null)
+  const editorId = useId()
+  const description = describeFilterExpression(filter.condition, properties)
+
+  function closeEditor() {
+    setEditing(false)
+    editButton.current?.focus()
+  }
+
+  return (
+    <div className="filter-condition-container">
+      <div className="filter-condition">
+        <span>{description}</span>
+        <div className="filter-condition-actions">
+          <button
+            ref={editButton}
+            className="text-button"
+            aria-label={`Edit filter ${description}`}
+            aria-expanded={editing}
+            aria-controls={editing ? editorId : undefined}
+            onClick={() => setEditing(!editing)}
+          >
+            Edit
+          </button>
+          <button className="chip-remove" aria-label={`Remove filter ${description}`} onClick={onRemove}>
+            <Icon name="close" />
+          </button>
+        </div>
+      </div>
+      {editing && (
+        <div id={editorId}>
+          <FilterBuilder
+            properties={properties}
+            initialCondition={filter.condition}
+            onApply={onApply}
+            onClose={closeEditor}
+          />
+        </div>
+      )}
+    </div>
   )
 }

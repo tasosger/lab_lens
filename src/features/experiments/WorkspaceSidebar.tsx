@@ -47,6 +47,16 @@ export function WorkspaceSidebar({
           <Icon name="columns" />
           <span className="sidebar-link-label">Compare ({selectedCount})</span>
         </button>
+        <button
+          className="sidebar-link"
+          onClick={() => onNavigate('charts')}
+          aria-current={activeView === 'charts' ? 'page' : undefined}
+          aria-label="Charts"
+          title="Charts"
+        >
+          <Icon name="chart" />
+          <span className="sidebar-link-label">Charts</span>
+        </button>
       </nav>
 
       <section className="sidebar-dataset" aria-labelledby="sidebar-dataset-title">

@@ -14,17 +14,21 @@ const operatorOptions: { value: NumericFilter['operator']; label: string }[] = [
 
 export function FilterBuilder({
   properties,
+  initialCondition,
   onApply,
   onClose,
 }: {
   properties: readonly PropertyDefinition[]
+  initialCondition?: NumericFilter
   onApply: (condition: NumericFilter) => void
   onClose: () => void
 }) {
-  const [propertyId, setPropertyId] = useState<PropertyId | ''>(properties[0]?.id ?? '')
-  const [operator, setOperator] = useState<NumericFilter['operator']>('gte')
-  const [value, setValue] = useState('')
-  const [max, setMax] = useState('')
+  const [propertyId, setPropertyId] = useState<PropertyId | ''>(initialCondition?.propertyId ?? properties[0]?.id ?? '')
+  const [operator, setOperator] = useState<NumericFilter['operator']>(initialCondition?.operator ?? 'gte')
+  const [value, setValue] = useState(initialCondition
+    ? String(initialCondition.operator === 'between' ? initialCondition.min : initialCondition.value)
+    : '')
+  const [max, setMax] = useState(initialCondition?.operator === 'between' ? String(initialCondition.max) : '')
   const [error, setError] = useState('')
   const errorId = useId()
 
@@ -66,7 +70,7 @@ export function FilterBuilder({
       }}
     >
       <div className="editor-heading">
-        <strong>Add a condition</strong>
+        <strong>{initialCondition ? 'Edit condition' : 'Add a condition'}</strong>
         <button
           type="button"
           className="icon-button"
@@ -150,8 +154,13 @@ export function FilterBuilder({
         )}
 
         <button className="button primary" disabled={!propertyId} type="submit">
-          Apply filter
+          {initialCondition ? 'Save changes' : 'Apply filter'}
         </button>
+        {initialCondition && (
+          <button className="button" type="button" onClick={onClose}>
+            Cancel
+          </button>
+        )}
       </div>
 
       {error && (

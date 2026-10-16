@@ -42,7 +42,7 @@ export function ComparisonView({
       <section id="comparison" className="experiment-card comparison-empty" aria-label="Experiment comparison">
         <span className="empty-icon"><Icon name="columns" /></span>
         <h2>{experiments.length ? 'Select one more experiment' : 'Choose experiments to compare'}</h2>
-        <p>Select two to four experiments using the checkboxes in the experiment table.</p>
+        <p>Select at least two experiments using the checkboxes in the experiment table.</p>
         <button className="button primary" onClick={onExplore}>Choose experiments</button>
       </section>
     )

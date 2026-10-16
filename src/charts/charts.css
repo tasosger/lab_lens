@@ -1,0 +1,55 @@
+.cartesian-chart { position: relative; width: 100%; min-width: 0; }
+.cartesian-chart > svg { display: block; width: 100%; overflow: visible; }
+.chart-axis text { fill: #647187; font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart-axis .chart-axis-label { fill: #46556d; font-size: 12px; font-weight: 600; }
+.chart-grid-line { stroke: #e9edf4; stroke-width: 1; }
+.scatter-point { cursor: pointer; outline: none; }
+.scatter-hit-area { fill: transparent; }
+.scatter-dot { fill: #6c80d7; fill-opacity: .8; stroke: white; stroke-width: 1.5; }
+.scatter-point-selected .scatter-dot { fill: #354eae; fill-opacity: 1; stroke: #1e326d; stroke-width: 2; }
+.scatter-point-active .scatter-dot, .scatter-point:focus-visible .scatter-dot { fill: #354eae; fill-opacity: 1; stroke: #172d6d; stroke-width: 3; }
+.scatter-point-excluded .scatter-dot { fill: none; stroke: #9ca8c2; stroke-width: 1.5; opacity: .65; }
+.scatter-point-excluded:focus-visible .scatter-dot { stroke: #172d6d; stroke-width: 3; opacity: 1; }
+.chart-brush-hit { fill: transparent; cursor: crosshair; touch-action: none; }
+.chart-brush-selection { fill: #526bc2; fill-opacity: .12; stroke: #526bc2; stroke-width: 1.5; pointer-events: none; }
+.chart-range-tools { padding: 10px 20px 14px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.chart-range-mode { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+.chart-range-tools summary, .plot-filter-controls summary { cursor: pointer; color: var(--accent-dark); width: fit-content; }
+.chart-range-form { padding-top: 12px; }
+.chart-range-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.chart-range-fields label { display: grid; gap: 5px; min-width: 0; font-size: 12px; color: #46556d; }
+.chart-range-fields input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: inherit; }
+@media (max-width: 480px) { .chart-range-fields { grid-template-columns: 1fr; } }
+.chart-tooltip { position: absolute; z-index: 2; width: 240px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px; background: #fff; box-shadow: 0 8px 24px #14243e1a; pointer-events: none; font-size: 11px; line-height: 1.6; }
+.chart-tooltip strong { display: block; margin-bottom: 8px; color: #344463; font-size: 12px; overflow-wrap: anywhere; }
+.chart-tooltip dl > div { display: flex; justify-content: space-between; gap: 12px; }
+.chart-tooltip dt { color: var(--muted); }
+.chart-tooltip dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chart-tooltip > span { display: block; margin-top: 8px; color: var(--muted); }
+.chart-data { border-top: 1px solid var(--border); }
+.chart-data summary { padding: 17px 24px; color: var(--accent-dark); font-size: 12px; font-weight: 600; cursor: pointer; }
+.chart-data summary:focus-visible { outline: 3px solid #7b96ee; outline-offset: -3px; }
+.chart-data-scroll { overflow: auto; max-height: 320px; }
+.chart-data table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; text-align: left; }
+.chart-data th, .chart-data td { padding: 10px 24px; border-top: 1px solid var(--border); white-space: nowrap; }
+.chart-data thead th { position: sticky; top: 0; background: var(--surface-muted); color: #536581; font-weight: 500; }
+.chart-data td, .chart-data thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.chart-data tbody th { font-weight: 400; }
+.orbit-chart > svg { cursor: grab; touch-action: none; user-select: none; overflow: hidden; }
+.orbit-chart-rotating > svg, .orbit-chart-rotating .scatter-point { cursor: grabbing; }
+.orbit-grid { pointer-events: none; }
+.orbit-grid polygon { fill: #f7f9fd; }
+.orbit-grid line { stroke: #dfe5f0; stroke-width: 1; }
+.orbit-grid text { fill: #647187; font-size: 10px; paint-order: stroke; stroke: white; stroke-width: 3px; stroke-linejoin: round; }
+.orbit-axis-0 { color: #4965b5; }
+.orbit-axis-1 { color: #217870; }
+.orbit-axis-2 { color: #8551a0; }
+.orbit-grid .orbit-axis line { stroke: currentColor; stroke-width: 1.8; }
+.orbit-grid .orbit-axis-title { fill: currentColor; font-size: 13px; font-weight: 700; }
+.orbit-axis-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; padding: 10px 20px; font-size: 11px; }
+.orbit-axis-legend strong { margin-right: 5px; }
+.orbit-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; padding: 10px 24px 6px; }
+.orbit-controls label { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; flex: 1 1 120px; color: #53617b; font-size: 11px; }
+.orbit-controls output { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.orbit-controls input { display: block; width: 100%; min-width: 0; accent-color: var(--accent); }
+.orbit-controls .button { min-height: 36px; padding: 7px 12px; font-size: 12px; }

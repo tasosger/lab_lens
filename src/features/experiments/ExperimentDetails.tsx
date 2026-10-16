@@ -4,6 +4,7 @@ import { AverageReference } from './AverageReference'
 import { formatValue } from './format'
 import { Icon } from './Icon'
 import { useResizableDrawer } from './useResizableDrawer'
+import { SELECTION_LIMIT } from './workspaceReducer'
 
 function DetailsSection({ title, count, children }: {
   title: string
@@ -147,7 +148,7 @@ export function ExperimentDetails({
         <span>
           {selectionFull && !selected
             ? 'Remove a selection to add another.'
-            : 'Keep up to 4 experiments in your selection.'}
+            : `Select up to ${SELECTION_LIMIT} experiments for comparison.`}
         </span>
         <button
           className={`button ${selected ? '' : 'primary'}`}

@@ -41,6 +41,20 @@ export function removeFilterNode(group: AppliedFilterGroup, id: number): Applied
   }
 }
 
+export function updateFilterCondition(
+  group: AppliedFilterGroup,
+  id: number,
+  condition: NumericFilter,
+): AppliedFilterGroup {
+  const filters = group.filters.map((node) => {
+    if (isAppliedGroup(node)) return updateFilterCondition(node, id, condition)
+    return node.id === id ? { ...node, condition } : node
+  })
+  return filters.every((node, index) => node === group.filters[index])
+    ? group
+    : { ...group, filters }
+}
+
 export function countConditions(group: AppliedFilterGroup): number {
   return group.filters.reduce((count, node) =>
     count + (isAppliedGroup(node) ? countConditions(node) : 1), 0)

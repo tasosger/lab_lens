@@ -18,13 +18,15 @@ describe('experiment workspace', () => {
     assert.deepEqual(createWorkspaceState([]).visibleColumns, [])
   })
 
-  it('caps selections at four while allowing removal and preserving selection order', () => {
+  it('allows 100 selections while preserving order and allowing replacement at the limit', () => {
     let state = initial()
-    for (const id of ['A', 'B', 'C', 'D', 'E']) state = workspaceReducer(state, { type: 'toggle-selection', id })
-    assert.deepEqual(state.selectedIds, ['A', 'B', 'C', 'D'])
-    state = workspaceReducer(state, { type: 'toggle-selection', id: 'B' })
-    state = workspaceReducer(state, { type: 'toggle-selection', id: 'E' })
-    assert.deepEqual(state.selectedIds, ['A', 'C', 'D', 'E'])
+    const ids = Array.from({ length: 100 }, (_, index) => `EXP_${index}`)
+    for (const id of [...ids, 'OVER_LIMIT']) state = workspaceReducer(state, { type: 'toggle-selection', id })
+    assert.deepEqual(state.selectedIds, ids)
+    state = workspaceReducer(state, { type: 'toggle-selection', id: ids[0] })
+    state = workspaceReducer(state, { type: 'toggle-selection', id: 'REPLACEMENT' })
+    assert.deepEqual(state.selectedIds, [...ids.slice(1), 'REPLACEMENT'])
+    assert.equal(state.baselineId, ids[1])
   })
 
   it('preserves selections and open details across filtering, search and query reset', () => {

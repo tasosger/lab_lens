@@ -1,0 +1,2 @@
+.property-select { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: #53617b; }
+.property-select select { width: 100%; min-width: 0; height: 42px; padding: 9px 12px; border: 1px solid #dce1ea; background: white; color: #35425a; font-size: 13px; font-weight: 400; }

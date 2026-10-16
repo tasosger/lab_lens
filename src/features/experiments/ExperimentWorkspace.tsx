@@ -6,8 +6,11 @@ import {
 } from '../../data'
 import { ExperimentDetails } from './ExperimentDetails'
 import { ComparisonView } from './ComparisonView'
+import { ScatterPlotView } from '../charts/ScatterPlotView'
+import { PlotRangeFilterControls } from '../charts/PlotRangeFilterControls'
+import { rangeForAxes } from '../charts/propertyRangeFilter'
 import { FilterGroupEditor } from './FilterGroupEditor'
-import { countConditions, describeFilterExpression } from './filterTree'
+import { countConditions, describeFilterExpression, toFilterExpression } from './filterTree'
 import { formatValue } from './format'
 import { Icon } from './Icon'
 import { WorkspaceSidebar } from './WorkspaceSidebar'
@@ -20,6 +23,9 @@ import {
   type WorkspaceView,
 } from './workspaceReducer'
 
+const viewHeadings: Record<WorkspaceView, string> = { explore: 'Experiments', compare: 'Compare experiments', charts: 'Charts' }
+const viewTargets: Record<WorkspaceView, string> = { explore: 'experiments', compare: 'comparison', charts: 'charts' }
+
 export function ExperimentWorkspace({ repository }: { repository: ExperimentRepository }) {
   const properties = repository.getProperties()
   const [state, dispatch] = useReducer(workspaceReducer, properties, createWorkspaceState)
@@ -29,10 +35,14 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
   const pageHeading = useRef<HTMLHeadingElement>(null)
   const previousView = useRef(state.activeView)
   const filterTree = getFilterTree(state)
-  const filterCount = countConditions(filterTree)
+  const filterCount = countConditions(filterTree) + (state.plotFilter ? 2 : 0)
   const query = getWorkspaceQuery(state)
-  const appliedExpression = query.filters?.[0]
+  const appliedExpression = toFilterExpression(filterTree)
   const results = repository.list(query)
+  // Keep source points and domains stable while changing the plot's own range.
+  const chartContext = state.activeView === 'charts' && state.plotFilter
+    ? repository.list(getWorkspaceQuery(state, { includePlotFilter: false })).items
+    : results.items
   const visibleProperties = properties.filter((property) =>
     state.visibleColumns.includes(property.id),
   )
@@ -84,8 +94,8 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
 
   return (
     <div className="app-shell">
-      <a href={state.activeView === 'explore' ? '#experiments' : '#comparison'} className="skip-link">
-        Skip to {state.activeView === 'explore' ? 'experiments' : 'comparison'}
+      <a href={`#${viewTargets[state.activeView]}`} className="skip-link">
+        Skip to {viewTargets[state.activeView]}
       </a>
       <WorkspaceSidebar
         experimentCount={results.total}
@@ -100,13 +110,28 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
         <div className="page-heading">
           <div>
             <h1 id="experiments-heading" ref={pageHeading} tabIndex={-1}>
-              {state.activeView === 'explore' ? 'Experiments' : 'Compare experiments'}
+              {viewHeadings[state.activeView]}
             </h1>
             {state.activeView === 'compare' && (
               <p className="comparison-page-description">Inspect values and differences across your selected experiments.</p>
             )}
+            {state.activeView === 'charts' && (
+              <p className="comparison-page-description">Explore relationships between inputs and outputs. Choose a property for each axis.</p>
+            )}
           </div>
+          {state.selectedIds.length > 0 && (
+            <div className="workspace-selection-actions">
+              {state.activeView !== 'compare' && (
+                <button className="button primary" disabled={state.selectedIds.length < 2} onClick={() => navigate('compare')}>
+                  <Icon name="columns" />Compare selected ({state.selectedIds.length})
+                </button>
+              )}
+              <button className="text-button" onClick={() => dispatch({ type: 'clear-selection' })}>Clear selection</button>
+            </div>
+          )}
         </div>
+
+        {selectionFull && <p id="selection-limit" className="notice">You have selected {SELECTION_LIMIT} experiments. Remove one to add another.</p>}
 
         {state.activeView === 'compare' && (
           <ComparisonView
@@ -127,7 +152,7 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
         )}
 
         <section
-          hidden={state.activeView !== 'explore'}
+          hidden={state.activeView === 'compare'}
           className="experiment-card"
           aria-labelledby="experiments-heading"
         >
@@ -155,17 +180,19 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
                 <span className="button-count">{filterCount}</span>
               )}
             </button>
-            <button
-              ref={columnButton}
-              className={`button columns-button ${openControl === 'columns' ? 'active' : ''}`}
-              aria-expanded={openControl === 'columns'}
-              aria-controls="column-chooser"
-              onClick={() => setOpenControl(openControl === 'columns' ? null : 'columns')}
-            >
-              <Icon name="columns" />
-              Columns
-              <span className="button-count">{visibleProperties.length}</span>
-            </button>
+            {state.activeView === 'explore' && (
+              <button
+                ref={columnButton}
+                className={`button columns-button ${openControl === 'columns' ? 'active' : ''}`}
+                aria-expanded={openControl === 'columns'}
+                aria-controls="column-chooser"
+                onClick={() => setOpenControl(openControl === 'columns' ? null : 'columns')}
+              >
+                <Icon name="columns" />
+                Columns
+                <span className="button-count">{visibleProperties.length}</span>
+              </button>
+            )}
           </div>
 
           {openControl && (
@@ -193,7 +220,7 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
                     </button>
                   </div>
                   <FilterGroupEditor group={filterTree} properties={properties} dispatch={dispatch} />
-                  {state.filters.length > 0 && (
+                  {filterCount > 0 && (
                     <button
                       className="text-button clear-filters"
                       onClick={() => dispatch({ type: 'clear-filters' })}
@@ -264,6 +291,14 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
                 {describeFilterExpression(appliedExpression, properties)}
               </p>
               <button
+                className="text-button"
+                aria-expanded={false}
+                aria-controls="filter-panel"
+                onClick={() => setOpenControl('filters')}
+              >
+                Edit filters
+              </button>
+              <button
                 className="text-button clear-filters"
                 onClick={() => dispatch({ type: 'clear-filters' })}
               >
@@ -272,179 +307,161 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
             </div>
           )}
 
+          {state.plotFilter && (
+            <PlotRangeFilterControls filter={state.plotFilter} properties={properties}
+              onChange={(filter) => dispatch({ type: 'set-plot-filter', filter })} />
+          )}
+
           <div className="results-heading">
             <p role="status" aria-live="polite">
               <strong>{results.matched}</strong> of {results.total} experiments
               {isFiltered && <span className="filtered-label">Filtered</span>}
             </p>
             <span className="results-hint">
-              Select up to {SELECTION_LIMIT} to keep in view
+              {hiddenSelectionCount > 0
+                ? `${hiddenSelectionCount} selected outside current results`
+                : state.activeView === 'charts' ? 'Each point is one experiment' : 'Select experiments to compare'}
             </span>
           </div>
 
-          <div
-            className="table-scroll"
-            id="experiments"
-            role="region"
-            aria-label="Experiment results, scroll for more rows or columns"
-            tabIndex={0}
-          >
-            <table className="experiment-table">
-              <caption className="sr-only">
-                Experiments and their measured properties. Use experiment names to open details.
-              </caption>
-              <thead>
-                <tr>
-                  <th className="selection-cell">
-                    <span className="sr-only">Selection</span>
-                  </th>
-                  <th
-                    className="identity-cell"
-                    scope="col"
-                    aria-sort={state.sort.field === 'id'
-                      ? (state.sort.direction === 'asc' ? 'ascending' : 'descending')
-                      : 'none'}
-                  >
-                    {sortHeader('id', 'Experiment name')}
-                  </th>
-                  {visibleProperties.map((property) => (
+          {state.activeView === 'charts' && (
+            <ScatterPlotView
+              experiments={chartContext}
+              matchingIds={results.items.map((experiment) => experiment.id)}
+              rangeSelection={rangeForAxes(state.plotFilter, state.chartAxes)}
+              hasPlotFilter={Boolean(state.plotFilter)}
+              onPlotFilter={(filter) => dispatch({ type: 'set-plot-filter', filter })}
+              properties={properties}
+              axes={state.chartAxes}
+              mode={state.chartMode}
+              zPropertyId={state.chartZ}
+              camera={state.chartCamera}
+              onModeChange={(mode) => dispatch({ type: 'chart-mode', mode })}
+              onZChange={(propertyId) => dispatch({ type: 'chart-z', propertyId })}
+              onCameraChange={(camera) => dispatch({ type: 'chart-camera', camera })}
+              selectedIds={state.selectedIds}
+              isFiltered={isFiltered}
+              onAxisChange={(axis, propertyId) => dispatch({ type: 'chart-axis', axis, propertyId })}
+              onSwapAxes={() => dispatch({ type: 'swap-chart-axes' })}
+              onOpen={(id) => dispatch({ type: 'open-experiment', id })}
+              onResetQuery={() => dispatch({ type: 'reset-query' })}
+            />
+          )}
+
+          <div hidden={state.activeView !== 'explore'}>
+            <div
+              className="table-scroll"
+              id="experiments"
+              role="region"
+              aria-label="Experiment results, scroll for more rows or columns"
+              tabIndex={0}
+            >
+              <table className="experiment-table">
+                <caption className="sr-only">
+                  Experiments and their measured properties. Use experiment names to open details.
+                </caption>
+                <thead>
+                  <tr>
+                    <th className="selection-cell">
+                      <span className="sr-only">Selection</span>
+                    </th>
                     <th
-                      key={property.id}
-                      className="numeric-cell"
+                      className="identity-cell"
                       scope="col"
-                      aria-sort={state.sort.field === property.id
+                      aria-sort={state.sort.field === 'id'
                         ? (state.sort.direction === 'asc' ? 'ascending' : 'descending')
                         : 'none'}
                     >
-                      <span className="column-group">
-                        {property.group === 'outputs' ? 'Output' : 'Input'}
-                      </span>
-                      {sortHeader(property.id, property.name)}
+                      {sortHeader('id', 'Experiment name')}
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {results.items.map((experiment) => {
-                  const selected = state.selectedIds.includes(experiment.id)
-                  return (
-                    <tr key={experiment.id} className={selected ? 'selected-row' : ''}>
-                      <td className="selection-cell">
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          disabled={selectionFull && !selected}
-                          aria-label={`Select ${experiment.id}`}
-                          aria-describedby={selectionFull && !selected
-                            ? 'selection-limit'
-                            : undefined}
-                          onChange={() => dispatch({
-                            type: 'toggle-selection',
-                            id: experiment.id,
-                          })}
-                        />
-                      </td>
-                      <th className="identity-cell" scope="row">
-                        <button
-                          className="experiment-link"
-                          onClick={() => dispatch({
-                            type: 'open-experiment',
-                            id: experiment.id,
-                          })}
-                        >
-                          {experiment.id}
-                          <Icon name="chevron" />
-                        </button>
+                    {visibleProperties.map((property) => (
+                      <th
+                        key={property.id}
+                        className="numeric-cell"
+                        scope="col"
+                        aria-sort={state.sort.field === property.id
+                          ? (state.sort.direction === 'asc' ? 'ascending' : 'descending')
+                          : 'none'}
+                      >
+                        <span className="column-group">
+                          {property.group === 'outputs' ? 'Output' : 'Input'}
+                        </span>
+                        {sortHeader(property.id, property.name)}
                       </th>
-                      {visibleProperties.map((property) => (
-                        <td key={property.id} className="numeric-cell">
-                          {formatValue(getPropertyValue(experiment, property))}
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.items.map((experiment) => {
+                    const selected = state.selectedIds.includes(experiment.id)
+                    return (
+                      <tr key={experiment.id} className={selected ? 'selected-row' : ''}>
+                        <td className="selection-cell">
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            disabled={selectionFull && !selected}
+                            aria-label={`Select ${experiment.id}`}
+                            aria-describedby={selectionFull && !selected
+                              ? 'selection-limit'
+                              : undefined}
+                            onChange={() => dispatch({
+                              type: 'toggle-selection',
+                              id: experiment.id,
+                            })}
+                          />
                         </td>
-                      ))}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                        <th className="identity-cell" scope="row">
+                          <button
+                            className="experiment-link"
+                            onClick={() => dispatch({
+                              type: 'open-experiment',
+                              id: experiment.id,
+                            })}
+                          >
+                            {experiment.id}
+                            <Icon name="chevron" />
+                          </button>
+                        </th>
+                        {visibleProperties.map((property) => (
+                          <td key={property.id} className="numeric-cell">
+                            {formatValue(getPropertyValue(experiment, property))}
+                          </td>
+                        ))}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
 
-            {results.matched === 0 && (
-              <div className="empty-state">
-                <span className="empty-icon"><Icon name="search" /></span>
-                <h3>
-                  {results.total === 0 ? 'No experiments available' : 'No matching experiments'}
-                </h3>
-                <p>
-                  {results.total === 0
-                    ? 'The dataset does not contain any experiments yet.'
-                    : 'Try a different name or adjust your filter conditions.'}
-                </p>
-                {isFiltered && (
-                  <button
-                    className="button"
-                    onClick={() => dispatch({ type: 'reset-query' })}
-                  >
-                    Reset search and filters
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="table-footer">
-            <span>Open an experiment for details. Click a heading to sort.</span>
-            <span>— indicates a missing value</span>
+              {results.matched === 0 && (
+                <div className="empty-state">
+                  <span className="empty-icon"><Icon name="search" /></span>
+                  <h3>
+                    {results.total === 0 ? 'No experiments available' : 'No matching experiments'}
+                  </h3>
+                  <p>
+                    {results.total === 0
+                      ? 'The dataset does not contain any experiments yet.'
+                      : 'Try a different name or adjust your filter conditions.'}
+                  </p>
+                  {isFiltered && (
+                    <button
+                      className="button"
+                      onClick={() => dispatch({ type: 'reset-query' })}
+                    >
+                      Reset search and filters
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="table-footer">
+              <span>Open an experiment for details. Click a heading to sort.</span>
+              <span>— indicates a missing value</span>
+            </div>
           </div>
         </section>
-
-        {state.selectedIds.length > 0 && (
-          <aside className="selection-bar" aria-label="Selected experiments">
-            <div className="selection-summary">
-              <span className="selection-icon"><Icon name="check" /></span>
-              <div>
-                <strong>{state.selectedIds.length} of {SELECTION_LIMIT} selected</strong>
-                <p id="selection-limit">
-                  {selectionFull
-                    ? 'Selection full. Remove one to add another.'
-                    : 'Open a selected experiment to inspect its details.'}
-                  {hiddenSelectionCount > 0
-                    && ` ${hiddenSelectionCount} hidden by search or filters.`}
-                </p>
-              </div>
-              <div className="selection-actions">
-                {state.activeView === 'explore' && (
-                  <button
-                    className="button primary"
-                    disabled={state.selectedIds.length < 2}
-                    onClick={() => navigate('compare')}
-                  >
-                    <Icon name="columns" />Compare selected
-                  </button>
-                )}
-                <button
-                  className="text-button"
-                  onClick={() => dispatch({ type: 'clear-selection' })}
-                >
-                  Clear selection
-                </button>
-              </div>
-            </div>
-            <div className="selection-chips">
-              {state.selectedIds.map((id) => (
-                <span className="selected-chip" key={id}>
-                  <button onClick={() => dispatch({ type: 'open-experiment', id })}>
-                    {id}
-                  </button>
-                  <button
-                    className="chip-remove"
-                    aria-label={`Deselect ${id}`}
-                    onClick={() => dispatch({ type: 'toggle-selection', id })}
-                  >
-                    <Icon name="close" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </aside>
-        )}
 
         <footer className="workspace-footer">
           <span>Values shown as supplied. Measurement units were not provided.</span>

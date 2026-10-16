@@ -168,4 +168,65 @@ describe('workspace filter groups and data API integration', () => {
     assert.equal(workspaceReducer(state, { type: 'add-filter', groupId: 1, condition: cure }), state)
     assert.equal(workspaceReducer(state, { type: 'add-filter-group', groupId: 1 }), state)
   })
+
+  it('edits a root condition in place, including changing its property and switching to and from a range', () => {
+    const original = apply({ type: 'add-filter', condition: strength })
+    const range: NumericFilter = { propertyId: 'inputs:Additive', operator: 'between', min: 0, max: 1 }
+    const ranged = workspaceReducer(original, { type: 'update-filter', id: 1, condition: range })
+    assert.deepEqual(ids(ranged), ['EXP_B', 'EXP_C', 'EXP_D'])
+    assert.deepEqual(ranged.filters, [{ id: 1, condition: range }])
+
+    const updated = workspaceReducer(ranged, { type: 'update-filter', id: 1, condition: additive })
+    assert.deepEqual(ids(updated), ['EXP_A', 'EXP_B'])
+    assert.deepEqual(updated.filters, [{ id: 1, condition: additive }])
+    assert.equal(updated.nextFilterId, original.nextFilterId)
+    assert.deepEqual(ids(original), ['EXP_B', 'EXP_C'])
+    assert.deepEqual(original.filters, [{ id: 1, condition: strength }])
+  })
+
+  it('updates nested AND/OR query results without changing grouping, order, or workspace controls', () => {
+    let original = mixedFilters()
+    original = workspaceReducer(original, { type: 'search', value: 'EXP_' })
+    original = workspaceReducer(original, { type: 'sort', field: 'outputs:Strength' })
+    original = workspaceReducer(original, { type: 'toggle-selection', id: 'EXP_B' })
+    const snapshot = structuredClone(original)
+    const condition: NumericFilter = { propertyId: 'outputs:Strength', operator: 'lt', value: 5 }
+    const updated = workspaceReducer(original, { type: 'update-filter', id: 2, condition })
+
+    assert.deepEqual(ids(updated), ['EXP_A'])
+    assert.deepEqual(updated.filters, [
+      { id: 1, operator: 'or', filters: [{ id: 2, condition }, { id: 3, condition: cure }] },
+      { id: 4, condition: additive },
+    ])
+    assert.deepEqual({ ...updated, filters: original.filters }, original)
+    assert.equal(countConditions(getFilterTree(updated)), 3)
+    assert.deepEqual(original, snapshot)
+    assert.deepEqual(ids(original), ['EXP_B'])
+  })
+
+  it('edits only the selected instance of a repeated condition several groups deep', () => {
+    const original = apply(
+      { type: 'add-filter', condition: strength },
+      { type: 'add-filter-group', groupId: 0 },
+      { type: 'add-filter-group', groupId: 2 },
+      { type: 'add-filter', groupId: 3, condition: strength },
+    )
+    const condition: NumericFilter = { propertyId: 'outputs:Strength', operator: 'lt', value: 5 }
+    const updated = workspaceReducer(original, { type: 'update-filter', id: 4, condition })
+    assert.deepEqual(ids(original), ['EXP_B', 'EXP_C'])
+    assert.deepEqual(ids(updated), [])
+    assert.deepEqual(updated.filters, [
+      { id: 1, condition: strength },
+      { id: 2, operator: 'or', filters: [
+        { id: 3, operator: 'and', filters: [{ id: 4, condition }] },
+      ] },
+    ])
+  })
+
+  it('ignores edits to missing conditions or group IDs instead of adding or replacing filters', () => {
+    const state = workspaceReducer(mixedFilters(), { type: 'remove-filter', id: 2 })
+    for (const id of [0, 1, 2, 999]) {
+      assert.equal(workspaceReducer(state, { type: 'update-filter', id, condition: cure }), state)
+    }
+  })
 })
