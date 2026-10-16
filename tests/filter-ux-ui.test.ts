@@ -24,17 +24,16 @@ const group = { id: 0, operator: 'and', filters: [
 ] }
 
 describe('simplified filter controls', () => {
-  it('opens the first filter immediately and keeps grouping under Advanced', async () => {
+  it('starts with property selection and hides unrelated controls', async () => {
     const { FilterGroupEditor } = await server.ssrLoadModule('/src/features/experiments/FilterGroupEditor.tsx')
     const html = renderToStaticMarkup(createElement(FilterGroupEditor, { properties, experiments, dispatch: noop,
       group: { id: 0, operator: 'and', filters: [] } }))
     assert.equal((html.match(/<form /g) ?? []).length, 1)
     assert.match(html, /class="filter-composer"/)
-    assert.match(html, /class="filter-advanced"><summary/)
-    assert.doesNotMatch(html, /Match all|Empty groups|Group 0/)
+    assert.doesNotMatch(html, /filter-advanced|Match all|Empty groups|Group 0/)
     assert.match(html, /Search inputs and outputs/)
-    assert.match(html, /Value type<select/)
-    assert.match(html, /<option value="absolute" selected="">Absolute/)
+    assert.match(html, /Choose a property/)
+    assert.doesNotMatch(html, /type="number"|<select|type="submit"/)
     assert.doesNotMatch(html, /Top 25%|Bottom 25%|Middle 50%|Above median|How percentiles work/)
   })
 
@@ -42,7 +41,7 @@ describe('simplified filter controls', () => {
     const { FilterGroupEditor } = await server.ssrLoadModule('/src/features/experiments/FilterGroupEditor.tsx')
     const html = renderToStaticMarkup(createElement(FilterGroupEditor, { properties, experiments, dispatch: noop, initialFilterId: 4, group }))
     assert.equal((html.match(/<form /g) ?? []).length, 1)
-    assert.match(html, /aria-label="Edit filter Cure Time between P25 and P75" aria-expanded="true"/)
+    assert.doesNotMatch(html, /aria-label="Edit filter Cure Time between P25 and P75"/)
     assert.match(html, /aria-label="Edit filter Strength ≥ P75" aria-expanded="false"/)
     assert.match(html, /Save changes/)
     assert.match(html, /Match all/)
@@ -50,7 +49,7 @@ describe('simplified filter controls', () => {
     assert.match(html, /<option value="percentile" selected="">Percentile/)
     assert.match(html, /value="25"/)
     assert.match(html, /value="75"/)
-    assert.match(html, /<strong>2<\/strong> of 5 experiments match this condition/)
+    assert.match(html, /<strong>2<\/strong> of 5 experiments after saving/)
   })
 
   it('shows editable summary chips with the original grouping and skips empty groups', async () => {

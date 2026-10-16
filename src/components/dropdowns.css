@@ -1,0 +1,39 @@
+/* Shared feedback for native selects and custom dropdowns. */
+select,
+details > summary,
+:is(.property-multi-options, .column-options) label,
+.property-axis-order li,
+:is(.filter-property-options, .chart-swap-options, .property-multi-actions, .filter-advanced > div) button {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+select:not(:disabled) { cursor: pointer; }
+select:disabled { cursor: not-allowed; }
+
+select:not(:disabled):is(:hover, :focus-visible),
+details > summary:is(:hover, :focus-visible) {
+  background-color: #f2f5ff;
+  border-color: #a8b8e5;
+  color: var(--accent-dark);
+}
+
+.property-multi-select:has(> summary:is(:hover, :focus-visible)) { border-bottom-color: #a8b8e5; }
+select option, select optgroup { background-color: #fff; color: #35425a; }
+
+:is(.property-multi-options, .column-options) label,
+.property-axis-order li { border-radius: 5px; }
+
+:is(.property-multi-options, .column-options) label:not(:has(input:disabled)):is(:hover, :focus-within),
+.property-axis-order li:is(:hover, :focus-within),
+:is(.filter-property-options, .chart-swap-options, .property-multi-actions, .filter-advanced > div) button:not(:disabled):is(:hover, :focus-visible) {
+  background-color: #f2f5ff;
+  color: var(--accent-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  select,
+  details > summary,
+  :is(.property-multi-options, .column-options) label,
+  .property-axis-order li,
+  :is(.filter-property-options, .chart-swap-options, .property-multi-actions, .filter-advanced > div) button { transition: none; }
+}

@@ -17,14 +17,12 @@ before(async () => { server = await createServer({ server: { middlewareMode: tru
 after(async () => { await server?.close() })
 
 describe('percentile filter UI', () => {
-  it('uses one value-type field and starts with an empty absolute value', async () => {
+  it('asks for a property before displaying numeric and percentile controls', async () => {
     const { FilterBuilder } = await server.ssrLoadModule('/src/features/experiments/FilterBuilder.tsx')
     const html = renderToStaticMarkup(createElement(FilterBuilder, { properties, experiments, onApply: noop, onClose: noop }))
-    assert.match(html, /Value type<select/)
-    assert.equal((html.match(/<option value="absolute"/g) ?? []).length, 1)
-    assert.match(html, /<option value="absolute" selected="">Absolute/)
-    assert.match(html, /<option value="percentile">Percentile/)
-    assert.match(html, /type="number"[^>]*value=""/)
+    assert.match(html, /Choose a property/)
+    assert.match(html, /Search inputs and outputs/)
+    assert.doesNotMatch(html, /<select|type="number"/)
     assert.doesNotMatch(html, /role="alert"|Threshold type|Quick percentile|How percentiles work|filter-presets/)
   })
 

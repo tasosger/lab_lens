@@ -3,10 +3,11 @@ import { useDetailsDropdown } from '../../components/useDetailsDropdown'
 import type { PropertyDefinition, PropertyId } from '../../data'
 import { Icon } from '../../components/Icon'
 
-export function FilterPropertyPicker({ properties, value, onChange }: {
+export function FilterPropertyPicker({ properties, value, onChange, autoOpen = false }: {
   properties: readonly PropertyDefinition[]
   value: PropertyId | ''
   onChange: (id: PropertyId) => void
+  autoOpen?: boolean
 }) {
   const dropdown = useDetailsDropdown()
   const search = useRef<HTMLInputElement>(null)
@@ -16,9 +17,14 @@ export function FilterPropertyPicker({ properties, value, onChange }: {
   const valueId = useId()
   const property = properties.find(item => item.id === value)
   const matches = properties.filter(item => `${item.name} ${item.group}`.toLowerCase().includes(query.trim().toLowerCase()))
-  useEffect(() => { dropdown.trigger.current?.focus() }, [dropdown.trigger])
+  useEffect(() => {
+    if (autoOpen && dropdown.menuProps.ref.current) {
+      dropdown.menuProps.ref.current.open = true
+      search.current?.focus()
+    }
+  }, [autoOpen, dropdown.menuProps.ref])
 
-  function select(id: PropertyId) { onChange(id); dropdown.close(true) }
+  function select(id: PropertyId) { dropdown.close(true); onChange(id) }
 
   return <div className="filter-property-picker">
     <span className="filter-field-label" id={labelId}>Property</span>
@@ -31,7 +37,7 @@ export function FilterPropertyPicker({ properties, value, onChange }: {
       </summary>
       <div className="filter-property-menu" role="group" aria-label="Choose a filter property">
         <label className="filter-property-search"><Icon name="search" /><span className="sr-only">Search properties</span>
-          <input ref={search} type="search" value={query} placeholder="Search inputs and outputs…" onChange={event => setQuery(event.target.value)}
+          <input ref={search} type="search" value={query} placeholder="Search inputs and outputs…" autoComplete="off" onChange={event => setQuery(event.target.value)}
             onKeyDown={event => {
               if (event.key === 'ArrowDown') { event.preventDefault(); options.current?.querySelector<HTMLButtonElement>('button')?.focus() }
               if (event.key === 'Enter') { event.preventDefault(); if (matches.length === 1) select(matches[0]!.id) }
@@ -49,7 +55,7 @@ export function FilterPropertyPicker({ properties, value, onChange }: {
             const items = matches.filter(item => item.group === group)
             return items.length > 0 && <div key={group} role="group" aria-label={group === 'inputs' ? 'Inputs' : 'Outputs'}>
               <p>{group === 'inputs' ? 'Inputs' : 'Outputs'}</p>
-              {items.map(item => <button type="button" key={item.id} aria-pressed={item.id === value} onClick={() => select(item.id)}>
+              {items.map(item => <button type="button" key={item.id} data-property-id={item.id} aria-pressed={item.id === value} onClick={() => select(item.id)}>
                 <span>{item.name}</span>{item.id === value && <Icon name="check" />}
               </button>)}
             </div>

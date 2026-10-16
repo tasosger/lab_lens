@@ -31,6 +31,83 @@ function element<T extends Element = HTMLElement>(selector: string): T {
   return result
 }
 
+async function enterValue(selector: string, value: string) {
+  const input = element<HTMLInputElement | HTMLSelectElement>(selector)
+  await act(async () => {
+    const prototype = input.tagName === 'SELECT' ? dom.window.HTMLSelectElement.prototype : dom.window.HTMLInputElement.prototype
+    Object.getOwnPropertyDescriptor(prototype, 'value')!.set!.call(input, value)
+    input.dispatchEvent(new dom.window.Event(input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }))
+  })
+}
+
+describe('mounted filter flow', () => {
+  it('adds from search, previews the complete query, and edits in place without applying canceled changes', async () => {
+    const { ExperimentWorkspace } = await server.ssrLoadModule('/src/features/experiments/ExperimentWorkspace.tsx')
+    await dom.render(createElement(ExperimentWorkspace, { repository }))
+    const rows = () => [...dom.container.querySelectorAll('.experiment-table tbody .experiment-link')].map(link => link.textContent?.trim())
+    await dom.click(element('button[aria-label="Filters"]'))
+    assert.equal(dom.window.document.activeElement, element('.filter-property-search input'))
+    assert.equal(dom.container.querySelector('.filter-composer input[type="number"]'), null)
+    await enterValue('.filter-property-search input', 'stren')
+    assert.equal(dom.container.querySelectorAll('.filter-property-options button').length, 1)
+    await dom.key(element('.filter-property-search input'), 'Enter')
+    assert.equal(dom.window.document.activeElement, element('.filter-thresholds input'))
+    assert.equal(element<HTMLSelectElement>('.filter-value-type select').value, 'absolute')
+    await enterValue('.filter-thresholds input', '10')
+    assert.match(element('.filter-composer-footer').textContent!, /2 of 5 experiments after saving/)
+    assert.equal(rows().length, 5)
+    await dom.click(element('.filter-composer button[type="submit"]'))
+    assert.deepEqual(rows(), ['EXP_B', 'EXP_C'])
+    assert.equal(dom.container.querySelector('.filter-composer'), null)
+
+    await dom.click(element('.filter-rule-actions > button'))
+    await dom.click(element('[data-property-id="inputs:Additive"]'))
+    await enterValue('.filter-thresholds input', '1')
+    assert.match(element('.filter-composer-footer').textContent!, /1 of 5 experiments after saving/)
+    assert.deepEqual(rows(), ['EXP_B', 'EXP_C'])
+    await enterValue('input[aria-label="Search experiments"]', 'EXP_C')
+    assert.match(element('.filter-composer-footer').textContent!, /0 of 5 experiments after saving/)
+    await dom.key(element('.filter-thresholds input'), 'Escape')
+    assert.deepEqual(rows(), ['EXP_C'])
+    assert.equal(dom.container.querySelectorAll('.filter-rule-edit').length, 1)
+    await enterValue('input[aria-label="Search experiments"]', '')
+
+    await dom.click(element('.filter-rule-edit'))
+    assert.equal(dom.container.querySelector('.filter-rule-edit'), null, 'editing replaces the original row')
+    assert.equal(element<HTMLInputElement>('.filter-thresholds input').value, '10')
+    await enterValue('.filter-thresholds input', '2')
+    assert.match(element('.filter-composer-footer').textContent!, /3 of 5 experiments after saving/)
+    await dom.key(element('.filter-thresholds input'), 'Escape')
+    assert.deepEqual(rows(), ['EXP_B', 'EXP_C'])
+    await dom.click(element('.filter-rule-edit'))
+    assert.equal(element<HTMLInputElement>('.filter-thresholds input').value, '10')
+    await enterValue('.filter-thresholds input', '2')
+    await dom.click(element('.filter-composer button[type="submit"]'))
+    assert.deepEqual(rows(), ['EXP_A', 'EXP_B', 'EXP_C'])
+  })
+
+  it('keeps range values when switching units, explains percentile cutoffs, and rejects invalid bounds', async () => {
+    const { ExperimentWorkspace } = await server.ssrLoadModule('/src/features/experiments/ExperimentWorkspace.tsx')
+    await dom.render(createElement(ExperimentWorkspace, { repository }))
+    await dom.click(element('button[aria-label="Filters"]'))
+    await dom.click(element('[data-property-id="outputs:Strength"]'))
+    await enterValue('.filter-composer-fields > label select', 'between')
+    await enterValue('.filter-thresholds label:first-child input', '25')
+    await enterValue('.filter-thresholds label:last-child input', '75')
+    await enterValue('.filter-value-type select', 'percentile')
+    assert.equal(element<HTMLInputElement>('.filter-thresholds label:first-child input').value, '25')
+    assert.equal(element<HTMLInputElement>('.filter-thresholds label:last-child input').value, '75')
+    assert.equal(element('.filter-value-hint').textContent, 'P25–P75 = 1 to 10')
+    await enterValue('.filter-thresholds label:last-child input', '101')
+    assert.ok(element<HTMLButtonElement>('.filter-composer button[type="submit"]').disabled)
+    assert.match(element('[role="alert"]').textContent!, /between 0 and 100/)
+    await enterValue('.filter-thresholds label:last-child input', '75')
+    await dom.click(element('.filter-composer button[type="submit"]'))
+    assert.equal(dom.container.querySelectorAll('.experiment-table tbody .experiment-link').length, 3)
+    assert.match(element('.filter-rule-edit').textContent!, /Strength between P25 and P75/)
+  })
+})
+
 describe('mounted workspace and chart behavior', () => {
   it('reuses query results for unrelated actions and invalidates them for query and repository changes', async () => {
     const { useWorkspaceData } = await server.ssrLoadModule('/src/features/experiments/useWorkspaceData.ts')

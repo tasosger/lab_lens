@@ -85,25 +85,20 @@ export function ExperimentToolbar({ state, dispatch, results, properties, allExp
                 <strong>Filter experiments</strong>
                 <p className="filter-panel-results">{results.matched} of {results.total} experiments match your filters</p>
               </div>
-              <button
-                className="icon-button"
-                aria-label="Close filters"
-                onClick={closeControl}
-              >
-                <Icon name="close" />
-              </button>
+              <div className="filter-panel-actions">
+                {filterCount > 0 && <button type="button" className="text-button clear-filters"
+                  onClick={() => dispatch({ type: 'clear-filters' })}>Clear all</button>}
+                <button
+                  className="icon-button"
+                  aria-label="Close filters"
+                  title="Close filters"
+                  onClick={closeControl}
+                >
+                  <Icon name="close" />
+                </button>
+              </div>
             </div>
-            <FilterGroupEditor group={filterTree} properties={properties} experiments={allExperiments} dispatch={dispatch} initialFilterId={filterToEdit} />
-            <div className="filter-panel-footer">
-              <button
-                className="text-button clear-filters"
-                disabled={filterCount === 0}
-                onClick={() => dispatch({ type: 'clear-filters' })}
-              >
-                Clear all
-              </button>
-              <button type="button" className="button" onClick={closeControl}>Done</button>
-            </div>
+            <FilterGroupEditor group={filterTree} properties={properties} experiments={allExperiments} dispatch={dispatch} initialFilterId={filterToEdit} search={state.search} />
           </section>
         )}
         {openControl === 'columns' && (
