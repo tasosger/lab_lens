@@ -64,6 +64,8 @@ export function validateDashboard(value: unknown, properties: readonly PropertyD
     const camera = record(config.chartCamera)
     // Existing v1 dashboards predate histogram settings and remain scatterplots.
     const chartType = config.chartType === undefined ? 'scatterplot' : config.chartType
+    const hideZeroInputs = config.hideZeroInputs === undefined ? false : config.hideZeroInputs
+    if (typeof hideZeroInputs !== 'boolean') throw new DashboardValidationError('Invalid zero-input visibility setting.')
     const histogramBins = config.histogramBins === undefined ? 'auto' : config.histogramBins
     if (!isChartType(chartType)) throw new DashboardValidationError('Unknown chart type.')
     if (!isHistogramBinCount(histogramBins)) throw new DashboardValidationError('Invalid histogram bin count.')
@@ -78,6 +80,7 @@ export function validateDashboard(value: unknown, properties: readonly PropertyD
     }
     return {
       chartType,
+      hideZeroInputs,
       histogramBins,
       histogramProperty: property(config.histogramProperty === undefined ? axes.y : config.histogramProperty, true),
       pieProperty: property(config.pieProperty === undefined ? defaults.pieProperty : config.pieProperty, true),

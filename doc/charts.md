@@ -52,6 +52,12 @@ Chart type, histogram property, and bin count live in the shared chart configura
 
 `tests/histogram.test.ts` covers bin endpoints, duplicates, zeros, missing values, constant/empty data, extreme finite ranges, matching queries, chart state, persistence, and older dashboard compatibility.
 
+## Excluding absent inputs
+
+Charts that use an ingredient input show a compact **Exclude zero inputs** checkbox. It defaults off and applies only to the chart's active properties: one property for pie/histogram, X/Y (plus Z in 3D) for scatterplots, or the chosen parallel axes. Zero amounts on unrelated inputs never exclude a record. Output and process zeros remain valid. Missing values still follow each chart's existing omission rules and are reported separately from explicitly excluded zeros.
+
+Filtering happens before bins, percentages, or numeric domains are computed. Heatmaps exclude zeros independently for each pair and update the paired count, avoiding an intersection across all selected ingredients. Opening a heatmap cell retains the checkbox state in the resulting scatterplot. The flag persists per dashboard widget with a backward-compatible default; source records, workspace queries, comparisons, and dataset reference statistics are unchanged. Tests in `chart-zero-inputs.test.ts` and `chart-zero-inputs-ui.test.ts` cover counts, scope, restoration, persistence, and the visible control.
+
 ## Pie charts
 
 Choose one input or output and group by **Exact values** or **Value ranges**. Range grouping reuses the histogram rules (default 5 bins, Auto or 1–50); empty bins do not produce slices. Exact values are sorted numerically, and labels fall back to full precision if formatting would make distinct values look identical. A constant property produces one complete circle.

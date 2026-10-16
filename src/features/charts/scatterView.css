@@ -1,4 +1,5 @@
 .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); background: var(--surface-muted); }
+.experiment-card:has(.property-multi-select[open], .chart-axis-swaps[open]) { overflow: visible; }
 .chart-controls > .property-select, .chart-axis-control { flex: 1 1 160px; min-width: 0; }
 .chart-controls > .chart-type-select { flex: 0 1 150px; }
 .chart-controls > .histogram-bins { flex: 0 1 120px; }
@@ -15,6 +16,7 @@
 .chart-value-count { padding: 2px 5px; border-radius: 5px; background: #f0f3f9; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
 .chart-value-error { flex-basis: 100%; color: #a63b35; font-size: 12px; line-height: 1.6; }
 .chart-axis-swaps { position: relative; }
+.chart-axis-swaps[open] { z-index: 5; }
 .chart-axis-swaps > summary { list-style: none; font-size: 12px; cursor: pointer; }
 .chart-axis-swaps > summary::-webkit-details-marker { display: none; }
 .chart-axis-swaps > summary .icon:last-child { width: 12px; transform: rotate(90deg); }

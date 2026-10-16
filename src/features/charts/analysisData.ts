@@ -2,6 +2,7 @@ import { pearsonCorrelation } from '../../charts/correlation.ts'
 import type { HistogramDatum } from '../../charts/histogram.ts'
 import { numericDomain } from '../../charts/numericScale.ts'
 import { getPropertyValue } from '../../data/properties.ts'
+import { isAbsentInput } from '../../data/inputPresence.ts'
 import type { Experiment, PropertyDefinition, PropertyId } from '../../data/types.ts'
 
 export function matchingExperiments(experiments: readonly Experiment[], matchingIds: readonly string[]): readonly Experiment[] {
@@ -23,9 +24,12 @@ export function selectedProperties(properties: readonly PropertyDefinition[], id
   return [...new Set(ids)].flatMap(id => { const property = byId.get(id); return property ? [property] : [] })
 }
 
-export function buildCorrelationMatrix(experiments: readonly Experiment[], columns: readonly PropertyDefinition[], rows: readonly PropertyDefinition[]) {
+export function buildCorrelationMatrix(experiments: readonly Experiment[], columns: readonly PropertyDefinition[], rows: readonly PropertyDefinition[], hideZeroInputs = false) {
   return rows.map(y => ({ property: y, cells: columns.map(x => ({ x, y,
-    ...pearsonCorrelation(experiments.map(experiment => [getPropertyValue(experiment, x), getPropertyValue(experiment, y)] as const)),
+    ...pearsonCorrelation(experiments.map(experiment => [
+      hideZeroInputs && isAbsentInput(experiment, x) ? undefined : getPropertyValue(experiment, x),
+      hideZeroInputs && isAbsentInput(experiment, y) ? undefined : getPropertyValue(experiment, y),
+    ] as const)),
   })) }))
 }
 

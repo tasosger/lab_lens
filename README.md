@@ -55,6 +55,8 @@ Choose **Parallel coordinates** to follow each experiment across multiple proper
 
 All five chart types are available in every dashboard plot through **Edit**. **Save dashboard** stores each chart's property choices, grouping, bins, and axis order. Switching types retains their settings; previously saved dashboards continue to load.
 
+For charts using ingredient inputs, **Exclude zero inputs** removes experiments where a chosen ingredient is absent (amount 0). Pie shares and histogram bins recalculate using the remaining experiments. Heatmaps apply the exclusion separately to each cell's property pair. The checkbox is also available directly on dashboard plots and is saved with that plot. Output values, process conditions, and the experiment table are unaffected.
+
 The reusable plotting components, numeric scales, axes, responsive frame, and data table live in `src/charts/`. Experiment-specific defaults and the record-to-point adapter live in `src/features/charts/`. See [chart architecture](doc/charts.md) for the extension points.
 
 ## Saved dashboards

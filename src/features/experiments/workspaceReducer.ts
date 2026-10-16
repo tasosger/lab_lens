@@ -72,6 +72,7 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
   switch (action.type) {
     case 'view': return { ...state, activeView: action.view }
     case 'chart-type':
+    case 'hide-zero-inputs':
     case 'histogram-property':
     case 'histogram-bins':
     case 'pie-property':

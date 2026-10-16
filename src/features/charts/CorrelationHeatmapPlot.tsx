@@ -1,0 +1,65 @@
+import { useState, type CSSProperties } from 'react'
+import { correlationDescription } from '../../charts/correlation'
+import { heatmapLayout } from '../../charts/responsiveLayout'
+import { useChartSize } from '../../charts/useChartSize'
+import type { PropertyDefinition, PropertyId } from '../../data/types'
+import type { buildCorrelationMatrix } from './analysisData'
+
+function cellColor(value: number | null) {
+  if (value === null) return '#edf0f5'
+  // A fixed diverging scale keeps colors comparable across filters and dashboards.
+  return `hsl(${value < 0 ? 24 : 220} ${Math.abs(value) * 65}% ${97 - Math.abs(value) * 57}%)`
+}
+
+const propertyLabel = (property: PropertyDefinition) => `${property.name} (${property.group === 'inputs' ? 'Input' : 'Output'})`
+
+export function CorrelationHeatmapPlot({ columns, matrix, onInspect }: {
+  columns: readonly PropertyDefinition[]
+  matrix: ReturnType<typeof buildCorrelationMatrix>
+  onInspect: (x: PropertyId, y: PropertyId) => void
+}) {
+  const { container, width } = useChartSize()
+  const layout = heatmapLayout(width, columns.length, matrix.length)
+  const [active, setActive] = useState<{ x: string; y: string } | null>(null)
+  const activeCell = matrix.find(row => row.property.id === active?.y)?.cells.find(cell => cell.x.id === active?.x)
+  const style = {
+    '--heatmap-gap': `${layout.gap}px`,
+    '--heatmap-cell-height': `${layout.cellHeight}px`,
+  } as CSSProperties
+
+  return <>
+    <div ref={container} className="heatmap-fit" role="region" aria-label="Property correlation matrix"
+      data-rotated={layout.rotateHeaders} data-values={layout.showValues} data-counts={layout.showCounts} style={style}>
+      <table className="correlation-heatmap">
+        <caption className="sr-only">Pearson correlations. Hover over or focus a cell for its correlation and paired experiment count. Select a cell to open its scatterplot.</caption>
+        <colgroup><col style={{ width: `${layout.rowLabelPercent}%` }} /><col span={columns.length} /></colgroup>
+        <thead><tr><th scope="col">Y ↓ / X →</th>{columns.map((property, index) => <th scope="col" key={property.id}>
+          <div className={index % layout.columnLabelStride === 0 ? 'heatmap-column-label' : 'sr-only'} title={propertyLabel(property)}>
+            <span>{property.name}</span><small>{property.group === 'inputs' ? 'Input' : 'Output'}</small>
+          </div>
+        </th>)}</tr></thead>
+        <tbody>{matrix.map((row, index) => <tr key={row.property.id}>
+          <th scope="row" title={propertyLabel(row.property)}>
+            <div className={index % layout.rowLabelStride === 0 ? 'heatmap-row-label' : 'sr-only'}>
+              <span>{row.property.name}</span>{layout.showRowGroups && <small>{row.property.group === 'inputs' ? 'Input' : 'Output'}</small>}
+            </div>
+          </th>
+          {row.cells.map(cell => <td key={cell.x.id}>
+            <button className="correlation-cell" style={{ backgroundColor: cellColor(cell.value), color: cell.value !== null && Math.abs(cell.value) >= 0.65 ? '#fff' : '#26364e' }}
+              title={`${propertyLabel(cell.y)} versus ${propertyLabel(cell.x)}: ${correlationDescription(cell)}; ${cell.count} paired experiments. Open scatterplot.`}
+              aria-label={`${propertyLabel(cell.y)} versus ${propertyLabel(cell.x)}: ${correlationDescription(cell)}; ${cell.count} paired experiments. Open scatterplot.`}
+              onMouseEnter={() => setActive({ x: cell.x.id, y: cell.y.id })} onMouseLeave={() => setActive(null)}
+              onFocus={() => setActive({ x: cell.x.id, y: cell.y.id })} onBlur={() => setActive(null)}
+              onClick={() => onInspect(cell.x.id, cell.y.id)}>
+              <strong>{cell.value === null ? 'N/A' : cell.value.toFixed(2)}</strong><span>n = {cell.count}</span>
+            </button>
+          </td>)}
+        </tr>)}</tbody>
+      </table>
+    </div>
+    <div className="heatmap-active-details" aria-live="polite">
+      {activeCell ? <><strong>{propertyLabel(activeCell.y)} × {propertyLabel(activeCell.x)}</strong>: {correlationDescription(activeCell)} · n = {activeCell.count}</>
+        : <span>Hover over or focus a cell to see its full labels, correlation and sample count.</span>}
+    </div>
+  </>
+}

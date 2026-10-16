@@ -4,6 +4,7 @@ import { createServer, type ViteDevServer } from 'vite'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createExperimentRepository } from '../src/data/repository.ts'
+import { getExperimentRepository } from '../src/data/index.ts'
 import { createChartConfiguration } from '../src/features/charts/chartConfiguration.ts'
 import { experimentFixture } from './fixtures.ts'
 
@@ -32,7 +33,8 @@ describe('analysis chart rendering and controls', () => {
       assert.match(html, /chart-controls/)
       assert.doesNotMatch(html, /NaN|Infinity/)
       const hidden = renderToStaticMarkup(createElement(ExperimentChartView, { ...props, showControls: false }))
-      assert.doesNotMatch(hidden, /chart-controls|<select|type="checkbox"/)
+      assert.doesNotMatch(hidden, /chart-controls|<select|property-multi-select/)
+      assert.match(hidden, /Exclude zero inputs/)
       assert.match(hidden, mark)
     }
   })
@@ -70,8 +72,44 @@ describe('analysis chart rendering and controls', () => {
     assert.match(html, /2 omitted: missing values/)
     assert.match(html, /EXP_C, selected/)
     assert.match(html, /View experiment values \(3\)/)
-    assert.match(html, /Move Additive later/)
+    assert.match(html, /aria-label="Rearrange Additive \(Input\)"/)
+    assert.match(html, /aria-label="Rearrange Strength \(Output\)"/)
+    assert.equal((html.match(/class="property-axis-drag-handle"/g) ?? []).length, 2)
+    assert.doesNotMatch(html, /Move .*? earlier|Move .*? later/)
     assert.doesNotMatch(html, /EXP_D|EXP_E/)
+  })
+
+  it('fits all dataset properties without dropping cells or axes or forcing a minimum plot width', async () => {
+    const { ExperimentChartView } = await server.ssrLoadModule('/src/features/charts/ExperimentChartView.tsx')
+    const real = getExperimentRepository()
+    const allProperties = real.getProperties()
+    const allExperiments = real.list().items
+    const ids = allProperties.map(property => property.id)
+    const props = { ...common, showControls: false, properties: allProperties, experiments: allExperiments,
+      matchingIds: allExperiments.map(experiment => experiment.id) }
+    const heatmap = renderToStaticMarkup(createElement(ExperimentChartView, { ...props,
+      configuration: { ...configuration, chartType: 'heatmap', heatmapX: ids, heatmapY: ids } }))
+    assert.equal((heatmap.match(/class="correlation-cell"/g) ?? []).length, ids.length ** 2)
+    assert.match(heatmap, /data-values="false"/)
+    assert.match(heatmap, /Hover over or focus a cell/)
+    assert.doesNotMatch(heatmap, /heatmap-scroll|min-width/)
+
+    const parallel = renderToStaticMarkup(createElement(ExperimentChartView, { ...props,
+      configuration: { ...configuration, chartType: 'parallel', parallelProperties: ids } }))
+    assert.equal((parallel.match(/class="parallel-axis"/g) ?? []).length, ids.length)
+    assert.doesNotMatch(parallel, /parallel-scroll|min-width|Scroll horizontally/)
+    const bounds = parallel.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/)!
+    assert.ok(bounds)
+    const points = [...parallel.matchAll(/class="parallel-line-visible" points="([^"]+)"/g)]
+    assert.ok(points.length > 0)
+    for (const [, values] of points) {
+      const coordinates = values!.split(' ').map(point => point.split(',').map(Number))
+      assert.equal(coordinates.length, ids.length)
+      for (const [x, y] of coordinates) {
+        assert.ok(x! >= 0 && x! <= Number(bounds[1]))
+        assert.ok(y! >= 0 && y! <= Number(bounds[2]))
+      }
+    }
   })
 
   it('explains empty results and incomplete axis choices without rendering misleading plots', async () => {

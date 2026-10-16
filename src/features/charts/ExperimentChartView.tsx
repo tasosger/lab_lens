@@ -7,6 +7,8 @@ import { ScatterPlotView } from './ScatterPlotView'
 import { PieChartView } from './PieChartView'
 import { CorrelationHeatmapView } from './CorrelationHeatmapView'
 import { ParallelCoordinatesView } from './ParallelCoordinatesView'
+import { chartIngredientInputs, excludeChartZeroInputs } from './inputPresence'
+import './inputPresence.css'
 
 /** One chart dispatcher for the Charts page and saved dashboard widgets. */
 export function ExperimentChartView({ id = 'charts', filterTarget, showControls = true, configuration, onChartAction, experiments, matchingIds,
@@ -27,13 +29,20 @@ export function ExperimentChartView({ id = 'charts', filterTarget, showControls 
   onOpen: (id: string) => void
   onResetQuery: () => void
 }) {
-  const common = { id, showControls, experiments, matchingIds, selectedIds, properties, isFiltered, onOpen, onResetQuery }
+  const filteredExperiments = excludeChartZeroInputs(experiments, configuration, properties)
+  const activeInputs = chartIngredientInputs(configuration, properties)
+  const matching = new Set(matchingIds)
+  const excludedCount = experiments.filter(experiment => matching.has(experiment.id)).length
+    - filteredExperiments.filter(experiment => matching.has(experiment.id)).length
+  const reset = () => { onChartAction({ type: 'hide-zero-inputs', value: false }); onResetQuery() }
+  const common = { id, showControls, experiments: filteredExperiments, matchingIds, selectedIds, properties,
+    isFiltered: isFiltered || (configuration.hideZeroInputs && activeInputs.length > 0), onOpen, onResetQuery: reset }
   const onTypeChange = (chartType: ChartConfiguration['chartType']) => onChartAction({ type: 'chart-type', chartType })
   const analysisProps = { ...common, configuration, onChartAction }
-  if (configuration.chartType === 'pie') return <PieChartView {...analysisProps} />
-  if (configuration.chartType === 'heatmap') return <CorrelationHeatmapView {...analysisProps} />
-  if (configuration.chartType === 'parallel') return <ParallelCoordinatesView {...analysisProps} />
-  return configuration.chartType === 'histogram' ? (
+  const chart = configuration.chartType === 'pie' ? <PieChartView {...analysisProps} />
+    : configuration.chartType === 'heatmap' ? <CorrelationHeatmapView {...analysisProps} />
+    : configuration.chartType === 'parallel' ? <ParallelCoordinatesView {...analysisProps} />
+    : configuration.chartType === 'histogram' ? (
     <HistogramView {...common} propertyId={configuration.histogramProperty} binCount={configuration.histogramBins}
       onTypeChange={onTypeChange} onPropertyChange={propertyId => onChartAction({ type: 'histogram-property', propertyId })}
       onBinCountChange={bins => onChartAction({ type: 'histogram-bins', bins })} />
@@ -47,4 +56,17 @@ export function ExperimentChartView({ id = 'charts', filterTarget, showControls 
       onZChange={propertyId => onChartAction({ type: 'chart-z', propertyId })}
       onCameraChange={camera => onChartAction({ type: 'chart-camera', camera })} />
   )
+  return <>
+    {activeInputs.length > 0 && <div className="chart-zero-filter">
+      <label className="zero-input-toggle" title={configuration.chartType === 'heatmap'
+        ? 'Exclude zero ingredient amounts separately for each cell’s property pair.'
+        : `Exclude experiments with a zero amount for: ${activeInputs.map(property => property.name).join(', ')}.`}>
+        <input type="checkbox" checked={configuration.hideZeroInputs}
+          onChange={event => onChartAction({ type: 'hide-zero-inputs', value: event.target.checked })} />
+        Exclude zero inputs
+      </label>
+      {configuration.hideZeroInputs && <span role="status">{configuration.chartType === 'heatmap' ? 'Per cell' : `${excludedCount} excluded`}</span>}
+    </div>}
+    {chart}
+  </>
 }

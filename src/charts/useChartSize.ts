@@ -8,7 +8,7 @@ export function useChartSize() {
     const element = container.current
     if (!element) return
     const updateWidth = (measured: number) => {
-      if (measured > 0) setWidth(Math.max(280, Math.round(measured)))
+      if (measured > 0) setWidth(Math.max(1, Math.round(measured)))
     }
     updateWidth(element.getBoundingClientRect().width)
     const observer = new ResizeObserver(([entry]) => {

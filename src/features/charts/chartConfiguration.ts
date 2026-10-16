@@ -25,6 +25,7 @@ export function scatterplotModeForValueCount(count: number): '2d' | '3d' {
 
 export interface ChartConfiguration {
   chartType: ChartType
+  hideZeroInputs: boolean
   histogramProperty: PropertyId | null
   histogramBins: HistogramBinCount
   pieProperty: PropertyId | null
@@ -41,6 +42,7 @@ export interface ChartConfiguration {
 
 export type ChartAction =
   | { type: 'chart-type'; chartType: ChartType }
+  | { type: 'hide-zero-inputs'; value: boolean }
   | { type: 'histogram-property'; propertyId: PropertyId }
   | { type: 'histogram-bins'; bins: HistogramBinCount }
   | { type: 'pie-property'; propertyId: PropertyId }
@@ -59,7 +61,7 @@ export function createChartConfiguration(properties: readonly PropertyDefinition
   const chartAxes = defaultChartAxes(properties)
   const inputs = properties.filter(property => property.group === 'inputs').map(property => property.id)
   const outputs = properties.filter(property => property.group === 'outputs').map(property => property.id)
-  return { chartType: 'scatterplot', histogramProperty: chartAxes.y, histogramBins: 'auto',
+  return { chartType: 'scatterplot', hideZeroInputs: false, histogramProperty: chartAxes.y, histogramBins: 'auto',
     pieProperty: chartAxes.x, pieGrouping: 'ranges', pieBins: 5,
     heatmapX: outputs.length ? outputs : inputs.slice(0, 1), heatmapY: inputs.length ? inputs : outputs,
     parallelProperties: [...new Set([chartAxes.x, chartAxes.y, inputs.find(id => id !== chartAxes.x), outputs.find(id => id !== chartAxes.y)]
@@ -71,6 +73,7 @@ export function createChartConfiguration(properties: readonly PropertyDefinition
 export function reduceChartConfiguration<T extends ChartConfiguration>(state: T, action: ChartAction): T {
   switch (action.type) {
     case 'chart-type': return { ...state, chartType: action.chartType }
+    case 'hide-zero-inputs': return { ...state, hideZeroInputs: action.value }
     case 'histogram-property': return { ...state, histogramProperty: action.propertyId }
     case 'histogram-bins': return isHistogramBinCount(action.bins) ? { ...state, histogramBins: action.bins } : state
     case 'pie-property': return { ...state, pieProperty: action.propertyId }
