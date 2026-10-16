@@ -24,6 +24,7 @@ The Charts view supports 2D and 3D scatterplots with shared search/filter result
 | `src/components/PropertySelect.tsx` | Reusable picker with input/output optgroups and stable property IDs. |
 | `src/features/charts/scatterData.ts` | Default experiment axes and adaptation of experiment records to generic points. |
 | `ScatterPlotView.tsx` | Experiment controls, empty states, missing-value count, and wiring to shared chart components. |
+| `chartConfiguration.ts` | Shared chart defaults and setting changes for Charts and dashboard widgets. |
 | `propertyRangeFilter.ts` / `PlotRangeFilterControls.tsx` | Bind ranges to property IDs, convert to numeric filters, and edit or clear the active plot filter. |
 | `workspaceReducer.ts` | Active view and axis choices, alongside shared query, selection, and detail state. |
 

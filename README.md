@@ -47,8 +47,6 @@ Hover or focus a point to inspect its values; click or press Enter/Space to open
 
 The reusable plotting components, numeric scales, axes, responsive frame, and data table live in `src/charts/`. Experiment-specific defaults and the record-to-point adapter live in `src/features/charts/`. See [chart architecture](doc/charts.md) for the extension points.
 
-## Commands
-
 ## Saved dashboards
 
 Open **Dashboards** in the sidebar for the default **Experiment overview**, which starts with two plots. Create a dashboard, add plots, choose their properties and 2D/3D mode, and use **Save dashboard** to keep its configuration after a refresh. Rename, duplicate, delete, reorder, and choose half/full-width plots. The dashboard list can sort by name or last saved time.
@@ -99,6 +97,8 @@ References: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), 
 - `src/features/charts/`: experiment scatterplot view, defaults, and record-to-point adapter.
 - `src/charts/`: reusable chart types, scales, axes, responsive frame, scatterplot, and accessible data table.
 - `src/components/PropertySelect.tsx`: shared grouped property picker.
+- `src/dashboards/`: dashboard models, validation, defaults, storage, and shared queries.
+- `src/features/dashboards/`: dashboard library, editor, chart cards, and draft state.
 - `src/main.tsx`: React entry point.
 - `src/index.css`: base stylesheet.
 - `vite.config.ts`: Vite configuration.
