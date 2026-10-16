@@ -10,7 +10,7 @@ import { buildCorrelationMatrix, buildParallelData, matchingExperiments, propert
 import { createChartConfiguration, reduceChartConfiguration } from '../src/features/charts/chartConfiguration.ts'
 import { chartIngredientInputs, excludeChartZeroInputs } from '../src/features/charts/inputPresence.ts'
 import { buildExperimentHistogram } from '../src/features/charts/histogramData.ts'
-import { buildScatter3DData, buildScatterData } from '../src/features/charts/scatterData.ts'
+import { buildScatterData } from '../src/features/charts/scatterData.ts'
 import { createDashboardDraft, dashboardReducer } from '../src/features/dashboards/dashboardReducer.ts'
 import { createWorkspaceState, getWorkspaceQuery, workspaceReducer } from '../src/features/experiments/workspaceReducer.ts'
 
@@ -58,13 +58,13 @@ describe('chart-local zero input exclusion', () => {
     assert.deepEqual(pie.slices.map(slice => slice.fraction), [0.5, 0.5])
   })
 
-  it('uses only active scatter axes, including Z only when the chart is 3D', () => {
+  it('uses only X/Y scatter axes, including when a saved chart has legacy Z settings', () => {
     const config = { ...enabled, chartAxes: { x: additive.id, y: strength.id }, chartZ: binder.id }
     let filtered = excludeChartZeroInputs(experiments, config, properties)
     assert.deepEqual(chartIngredientInputs(config, properties).map(p => p.id), [additive.id])
     assert.deepEqual(buildScatterData(filtered, additive, strength).points.map(p => p.id), ['B', 'C', 'D'])
     filtered = excludeChartZeroInputs(experiments, { ...config, chartMode: '3d' }, properties)
-    assert.deepEqual(buildScatter3DData(filtered, additive, strength, binder).points.map(p => p.id), ['C', 'D'])
+    assert.deepEqual(buildScatterData(filtered, additive, strength).points.map(p => p.id), ['B', 'C', 'D'])
   })
 
   it('excludes parallel lines with a zero on a chosen input and retains unrelated input zeros', () => {

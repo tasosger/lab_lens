@@ -10,7 +10,8 @@ export function chartIngredientInputs(configuration: ChartConfiguration, propert
     case 'pie': ids = [configuration.pieProperty]; break
     case 'heatmap': ids = [...configuration.heatmapX, ...configuration.heatmapY]; break
     case 'parallel': ids = configuration.parallelProperties; break
-    case 'scatterplot': ids = [configuration.chartAxes.x, configuration.chartAxes.y, ...(configuration.chartMode === '3d' ? [configuration.chartZ] : [])]; break
+    // Old saved configurations may still have a Z axis; only X/Y are displayed.
+    case 'scatterplot': ids = [configuration.chartAxes.x, configuration.chartAxes.y]; break
   }
   const active = new Set(ids)
   return properties.filter(property => active.has(property.id) && isIngredientInput(property))

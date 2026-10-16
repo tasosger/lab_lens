@@ -39,9 +39,9 @@ Remove experiments from their column headers. Removing the baseline selects the 
 
 ## Exploring charts
 
-Open **Charts**, choose a **Chart type**, and choose an input or output for each axis. The first plot is a 2D scatterplot showing Oven Temperature against Tensile Strength. **Swap axes** exchanges X/Y, or X/Z and Y/Z in 3D. Changing axes redraws immediately; search and nested filters are shared with the experiment table. Axis choices survive switching views.
+Open **Charts**, choose a **Chart type**, and choose an input or output for each axis. The first plot is a 2D scatterplot showing Oven Temperature against Tensile Strength. **Swap axes** exchanges X/Y. Changing axes redraws immediately; search and nested filters are shared with the experiment table. Axis choices survive switching views.
 
-For a scatterplot, **Add value** adds a Z axis (Elongation by default); remove Z to return to two dimensions. Drag to rotate and tilt, scroll over the plot to zoom, and double-click the background to reset the camera. All three values appear in point tooltips and the plotted-data table. Chart type, Z-axis choice, and camera settings survive view changes. Existing plot-range filters still apply; return to two dimensions to draw another range.
+Scatterplots display two properties, X and Y. Previously saved 3D charts open in 2D using those same axes; old Z-axis settings do not affect plotted records or zero-input exclusion.
 
 Hover or focus a point to inspect its values; click or press Enter/Space to open the existing details drawer. Selected experiments have darker, outlined markers. **View chart data** lists every point, including overlapping experiments, with buttons to open their details. Missing axis values are omitted and counted, while zeros remain valid coordinates. Empty results explain how to recover.
 

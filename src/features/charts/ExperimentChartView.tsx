@@ -48,13 +48,9 @@ export function ExperimentChartView({ id = 'charts', filterTarget, showControls 
       onBinCountChange={bins => onChartAction({ type: 'histogram-bins', bins })} />
   ) : (
     <ScatterPlotView {...common} filterTarget={filterTarget} rangeSelection={rangeSelection} hasPlotFilter={hasPlotFilter}
-      onPlotFilter={onPlotFilter} onTypeChange={onTypeChange} axes={configuration.chartAxes} mode={configuration.chartMode}
-      zPropertyId={configuration.chartZ} camera={configuration.chartCamera}
+      onPlotFilter={onPlotFilter} onTypeChange={onTypeChange} axes={configuration.chartAxes}
       onAxisChange={(axis, propertyId) => onChartAction({ type: 'chart-axis', axis, propertyId })}
-      onSwapAxes={pair => onChartAction({ type: 'swap-chart-axes', pair })}
-      onModeChange={mode => onChartAction({ type: 'chart-mode', mode })}
-      onZChange={propertyId => onChartAction({ type: 'chart-z', propertyId })}
-      onCameraChange={camera => onChartAction({ type: 'chart-camera', camera })} />
+      onSwapAxes={pair => onChartAction({ type: 'swap-chart-axes', pair })} />
   )
   return <>
     {activeInputs.length > 0 && <div className="chart-zero-filter">

@@ -1,6 +1,6 @@
 # Charts
 
-The Charts view offers Scatterplot, Histogram, Pie chart, Correlation heatmap, and Parallel coordinates. Two scatterplot axis values render in 2D, and adding a third renders in 3D. All types use matching search/filter results and are available in dashboard widgets. Experiment selection highlights individual marks or shows subset counts; heatmaps summarize the entire matching set.
+The Charts view offers Scatterplot, Histogram, Pie chart, Correlation heatmap, and Parallel coordinates. Scatterplots display two properties on X/Y axes. All types use matching search/filter results and are available in dashboard widgets. Experiment selection highlights individual marks or shows subset counts; heatmaps summarize the entire matching set.
 
 ## Boundaries
 
@@ -21,10 +21,7 @@ The Charts view offers Scatterplot, Histogram, Pie chart, Correlation heatmap, a
 | `PropertyMultiSelect.tsx` | Independent input/output checklists, selection presets, and ordered axes. |
 | `src/features/charts/histogramData.ts` / `HistogramView.tsx` | Matching experiment values, histogram controls, empty states, bin counts, and experiment inspection. |
 | `ExperimentChartView.tsx` / `ChartTypeSelect.tsx` | Shared chart dispatch and chart-type selection for Charts and dashboards. |
-| `ScatterPlot3D.tsx` | Three-axis SVG projection, depth ordering, cube axes, and three-value tooltips. |
-| `projection3D.ts` | Pure property normalization, orthographic projection, camera bounds, pointer-anchored zoom interpolation, and drag calculations. |
-| `useOrbitDrag.ts` | Drag rotation/tilt and Shift-drag panning with click suppression, animated wheel/pinch zoom, and background double-click reset. |
-| `AxisSwapMenu.tsx` | Compact X/Y, X/Z, and Y/Z swaps, with outside-click, blur, and Escape dismissal. |
+| `AxisSwapMenu.tsx` | X/Y swap control, with outside-click, blur, and Escape dismissal. |
 | `rangeSelection.ts` | Pure rectangle geometry, clipping, drag thresholds, and conversion between pixels and numeric ranges. |
 | `useRangeBrush.ts` / `CartesianBrush.tsx` | Pointer capture, cancellable drag previews, and the reusable SVG selection layer. |
 | `rangeInput.ts` / `CartesianRangeEditor.tsx` | Validated numeric bounds and a keyboard-accessible range form. |
@@ -33,8 +30,8 @@ The Charts view offers Scatterplot, Histogram, Pie chart, Correlation heatmap, a
 | `src/components/PropertySelect.tsx` | Reusable picker with input/output optgroups and stable property IDs. |
 | `src/features/charts/scatterData.ts` | Default experiment axes and adaptation of experiment records to generic points. |
 | `ScatterPlotView.tsx` | Experiment controls, empty states, missing-value count, and wiring to shared chart components. |
-| `ScatterPlotControls.tsx` | Shared value pickers, add/remove controls, and inline validation errors for Charts and dashboard plots. |
-| `chartConfiguration.ts` | Shared chart defaults, setting changes, and the three-value limit for Charts and dashboard widgets. |
+| `ScatterPlotControls.tsx` | Shared X/Y property pickers and axis swapping for Charts and dashboard plots. |
+| `chartConfiguration.ts` | Shared chart defaults and setting changes; legacy Z/camera fields remain compatible with saved dashboards. |
 | `propertyRangeFilter.ts` / `PlotRangeFilterControls.tsx` | Bind ranges to property IDs, convert to numeric filters, and edit or clear the active plot filter. |
 | `workspaceReducer.ts` | Active view and axis choices, alongside shared query, selection, and detail state. |
 
@@ -54,7 +51,7 @@ Chart type, histogram property, and bin count live in the shared chart configura
 
 ## Excluding absent inputs
 
-Charts that use an ingredient input show a compact **Exclude zero inputs** checkbox. It defaults off and applies only to the chart's active properties: one property for pie/histogram, X/Y (plus Z in 3D) for scatterplots, or the chosen parallel axes. Zero amounts on unrelated inputs never exclude a record. Output and process zeros remain valid. Missing values still follow each chart's existing omission rules and are reported separately from explicitly excluded zeros.
+Charts that use an ingredient input show a compact **Exclude zero inputs** checkbox. It defaults off and applies only to the chart's active properties: one property for pie/histogram, X/Y for scatterplots, or the chosen parallel axes. Zero amounts on unrelated inputs never exclude a record. Output and process zeros remain valid. Missing values still follow each chart's existing omission rules and are reported separately from explicitly excluded zeros.
 
 Filtering happens before bins, percentages, or numeric domains are computed. Heatmaps exclude zeros independently for each pair and update the paired count, avoiding an intersection across all selected ingredients. Opening a heatmap cell retains the checkbox state in the resulting scatterplot. The flag persists per dashboard widget with a backward-compatible default; source records, workspace queries, comparisons, and dataset reference statistics are unchanged. Tests in `chart-zero-inputs.test.ts` and `chart-zero-inputs-ui.test.ts` cover counts, scope, restoration, persistence, and the visible control.
 
@@ -88,13 +85,10 @@ Settings for all chart types are independent in `ChartConfiguration`. Dashboard 
 - Hover/focus shows values; click or Enter/Space opens details. Selecting in details updates the shared selection and plot highlight.
 - Axis choices survive view changes and query resets; a page refresh resets the workspace.
 - Labels retain source property names. Units are not invented.
-- Two values (X and Y) remain the default. **Add value** adds a Z property (Elongation by default) and automatically renders in 3D. Removing Z returns to 2D and retains the last Z choice for reuse. Trying to add a fourth value shows an inline validation error and preserves the current plot. Every plotted record must contain all active axis measurements, including valid zeros.
-- The 3D camera rotates independently normalized property ranges and draws points from back to front. Original values appear in tooltips and the data table, which adds a Z column.
-- The chart-type selector has a single **Scatterplot** option; dimensionality follows the number of axis values. Mode, Z selection, and camera settings survive view changes. Mouse dragging rotates and tilts; scrolling or trackpad pinching over the plot smoothly zooms toward the pointer from 0.25× to 6×. Shift-drag pans a magnified view, and double-clicking the background resets the camera. Existing plot ranges remain active in 3D; drawing a new range uses 2D.
-- Wheel input accumulates toward a target camera and is eased on animation frames; dragging, resetting, loading another camera, or unmounting cancels pending zoom motion. Pan offsets use viewport fractions and are saved with dashboard cameras; older saved cameras without offsets still load centered.
-- All three axis pairs can be exchanged. Swaps retain property-bound filters, selections, and camera settings.
-- `tests/charts-3d.test.ts` covers Z values, missing triples, projection, camera bounds, and state preservation.
-- `tests/chart-configuration.test.ts` covers adding/removing depth and rejecting a fourth value without changing the active chart.
+- Scatterplots always display X/Y values. There is no Z-axis picker, add-value button, or 3D camera interaction.
+- Saved 3D configurations remain readable and display their X/Y properties in 2D. Missing or zero values on an old Z property do not omit records or affect zero-input exclusion. Legacy configuration fields are preserved for storage compatibility.
+- Swapping X/Y retains property-bound filters and selections.
+- `tests/scatterplot-2d-ui.test.ts` covers standalone controls, saved 3D dashboard rendering, X/Y values, and missing legacy Z values. `tests/chart-zero-inputs.test.ts` verifies that old Z settings do not exclude experiments.
 
 ## Filtering from the plot
 
