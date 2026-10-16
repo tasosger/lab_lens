@@ -210,28 +210,29 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
             </div>
             <button
               ref={filterButton}
-              className={`button ${openControl === 'filters' ? 'active' : ''}`}
+              className={`icon-button toolbar-action${filterCount > 0 ? ' has-value' : ''}`}
+              aria-label={filterCount ? `Filters (${filterCount} active)` : 'Filters'}
+              title={filterCount ? `Filters (${filterCount} active)` : 'Filters'}
               aria-expanded={openControl === 'filters'}
               aria-controls="filter-panel"
               onClick={() => { setFilterToEdit(undefined); setOpenControl(openControl === 'filters' ? null : 'filters') }}
             >
               <Icon name="filter" />
-              Filters
               {filterCount > 0 && (
-                <span className="button-count">{filterCount}</span>
+                <span className="button-count" aria-hidden="true">{filterCount}</span>
               )}
             </button>
             {state.activeView === 'explore' && (
               <button
                 ref={columnButton}
-                className={`button columns-button ${openControl === 'columns' ? 'active' : ''}`}
+                className="icon-button toolbar-action columns-button"
+                aria-label={`Columns (${visibleProperties.length} visible)`}
+                title={`Columns (${visibleProperties.length} visible)`}
                 aria-expanded={openControl === 'columns'}
                 aria-controls="column-chooser"
                 onClick={() => setOpenControl(openControl === 'columns' ? null : 'columns')}
               >
                 <Icon name="columns" />
-                Columns
-                <span className="button-count">{visibleProperties.length}</span>
               </button>
             )}
           </div>
@@ -332,18 +333,22 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
             <div className="applied-filters">
               <FilterSummary group={filterTree} properties={properties} onEdit={id => { setFilterToEdit(id); setOpenControl('filters') }} />
               <button
-                className="text-button"
+                className="icon-button"
+                aria-label="Edit filters"
+                title="Edit filters"
                 aria-expanded={false}
                 aria-controls="filter-panel"
                 onClick={() => { setFilterToEdit(undefined); setOpenControl('filters') }}
               >
-                Edit filters
+                <Icon name="edit" />
               </button>
               <button
-                className="text-button clear-filters"
+                className="icon-button"
+                aria-label="Clear filters"
+                title="Clear filters"
                 onClick={() => dispatch({ type: 'clear-filters' })}
               >
-                Clear filters
+                <Icon name="close" />
               </button>
             </div>
           )}

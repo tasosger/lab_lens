@@ -57,8 +57,6 @@ export function PieChartView({ id, showControls, configuration, onChartAction, e
           </table>
         </div>
       </div>
-      <p className="chart-help">Slices show the share of experiments with a recorded value for {property.name}. Click a slice or its label to inspect experiments.
-        {data.slices.length > 10 && ' For fewer slices, group by value ranges and reduce the number of ranges.'}</p>
       {slice && <section className="histogram-inspector" aria-label="Experiments in selected slice">
         <div className="histogram-inspector-heading"><h3>{slice.label}</h3><button className="text-button" onClick={() => setInspected(null)}>Close slice details</button></div>
         <p role="status">{slice.items.length} experiments in this slice</p>

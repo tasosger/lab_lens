@@ -44,7 +44,7 @@ describe('dashboard UI boundaries', () => {
     assert.equal((html.match(/class="dashboard-drag-handle"/g) ?? []).length, 2)
     assert.equal((html.match(/class="dashboard-resize-handle"/g) ?? []).length, 2)
     assert.deepEqual([...html.matchAll(/data-resize-side="([^"]+)"/g)].map(match => match[1]), ['right', 'left'])
-    assert.equal((html.match(/class="button dashboard-edit-button"/g) ?? []).length, 2)
+    assert.equal((html.match(/class="icon-button dashboard-edit-button"/g) ?? []).length, 2)
     assert.equal((html.match(/aria-expanded="false"/g) ?? []).length, 2)
     assert.match(html, /Template<select/)
     for (const label of ['Two columns', 'Stacked', 'Featured plot']) assert.ok(html.includes(label))

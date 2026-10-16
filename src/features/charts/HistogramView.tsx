@@ -67,9 +67,6 @@ export function HistogramView({ id, showControls = true, experiments, matchingId
             <HistogramPlot key={`${property.id}:${binCount}:${data.domain.join(':')}`} data={data} label={property.name} selectedIds={selectedIds}
               selectedBin={inspectedBin} onSelectBin={inspect} formatValue={formatValue} />
           </div>
-          <p className="chart-help">Click a bar to inspect its experiments. Bins include their lower bound; only the final bin includes its upper bound.
-            {data.bins.length === 1 && data.bins[0]!.lower === data.bins[0]!.upper ? ' All recorded values are identical, so one bin is shown.'
-              : binCount === 'auto' ? ' Auto chooses the bin count from the number of recorded values.' : ''}</p>
           {inspectedBin && (
             <section className="histogram-inspector" aria-label="Experiments in selected bin">
               <div className="histogram-inspector-heading"><h3>{histogramBinLabel(inspectedBin, formatValue)}</h3>

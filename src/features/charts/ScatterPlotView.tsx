@@ -59,7 +59,6 @@ export function ScatterPlotView({ id = 'charts', showControls = true, experiment
               highlightedIds={selectedIds}
               formatValue={formatValue} onPointActivate={onOpen} />
           </div>
-          <p className="chart-help">Hover or focus a point for values; click or press Enter to open details.</p>
           <ChartDataTable points={data.points} xLabel={xProperty.name} yLabel={yProperty.name} itemLabel="Experiment" formatValue={formatValue} onPointActivate={onOpen} />
         </>
       )}

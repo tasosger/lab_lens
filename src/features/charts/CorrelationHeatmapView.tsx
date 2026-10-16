@@ -30,8 +30,6 @@ export function CorrelationHeatmapView({ id, showControls, configuration, onChar
       <div className="correlation-legend" aria-label="Color scale: minus one negative correlation, zero, plus one positive correlation">
         <span>−1 · Negative</span><span className="correlation-gradient" /><span>+1 · Positive</span><span className="correlation-na">N/A · Unavailable</span>
       </div>
-      <p className="chart-help">Each cell measures a linear relationship using only experiments with both values. N/A means fewer than 3 paired values or a constant property.
-        Correlation does not establish causation. Click a cell to inspect the relationship in a scatterplot.</p>
     </>}
   </section>
 }

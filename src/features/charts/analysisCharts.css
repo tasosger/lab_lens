@@ -1,9 +1,9 @@
 @import '../../charts/charts.css';
 @import './scatterView.css';
 
-.property-multi-select { position: relative; flex: 1 1 220px; min-width: 0; align-self: flex-end; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 12px; }
+.property-multi-select { position: relative; flex: 1 1 220px; min-width: 0; align-self: flex-end; border-bottom: 1px solid #dce1ea; font-size: 12px; }
 .property-multi-select[open] { z-index: 5; }
-.property-multi-select > summary { height: 40px; padding: 11px 12px; line-height: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; color: #46556d; font-weight: 600; }
+.property-multi-select > summary { height: 40px; padding: 11px 2px; line-height: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; color: #46556d; font-weight: 600; }
 .property-multi-select > summary > span { display: inline-block; margin-left: 8px; color: var(--muted); font-weight: 400; font-size: 11px; }
 .property-multi-select summary:focus-visible, .correlation-cell:focus-visible { outline: 3px solid #7b96ee; outline-offset: 2px; }
 .property-multi-body { position: absolute; top: calc(100% + 6px); left: 0; right: 0; max-height: min(520px, 60dvh); overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #14243e1a; }
@@ -12,7 +12,6 @@
 .property-multi-options legend { padding: 5px 0; font-weight: 600; color: #46556d; }
 .property-multi-options label { display: flex; align-items: center; gap: 8px; padding: 7px 4px; overflow-wrap: anywhere; cursor: pointer; }
 .property-multi-options input { accent-color: #526bc2; }
-.property-axis-help { padding: 10px 0 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .property-axis-order { margin: 0 0 10px; padding: 0; list-style: none; }
 .property-axis-order.is-dragging { user-select: none; }
 .property-axis-order li { position: relative; display: flex; align-items: center; gap: 8px; padding: 5px 0; }
@@ -21,8 +20,8 @@
 .property-axis-order li[data-drop='after'] { box-shadow: 0 2px 0 var(--accent); }
 .property-axis-order li > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .property-axis-order small { color: var(--muted); }
-.property-axis-drag-handle { display: grid; place-items: center; flex: 0 0 28px; height: 32px; padding: 4px; border: 1px solid transparent; border-radius: 5px; background: var(--surface-muted); color: #8391a9; cursor: grab; touch-action: none; user-select: none; }
-.property-axis-drag-handle:hover { border-color: #a4b3e5; color: var(--accent); }
+.property-axis-drag-handle { display: grid; place-items: center; flex: 0 0 28px; height: 32px; padding: 4px; border: 0; border-radius: 5px; background: transparent; color: #8391a9; cursor: grab; touch-action: none; user-select: none; }
+.property-axis-drag-handle:hover { background: #f0f3f8; color: var(--accent); }
 .property-axis-drag-handle:active { cursor: grabbing; }
 .property-axis-drag-preview { position: fixed; z-index: 50; max-width: min(240px, 70vw); padding: 10px 12px; border: 1px solid #a4b3e5; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #14243e26; color: var(--accent-dark); font-size: 12px; overflow-wrap: anywhere; pointer-events: none; }
 .property-axis-drag-preview small { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }

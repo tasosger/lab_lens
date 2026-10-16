@@ -99,7 +99,6 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
           <ChartTooltip id={`${id}-tooltip`} width={width} height={height} x={active.position.x} y={active.position.y}>
             <strong>{active.point.label}</strong>
             <dl>{axes.map((axis, index) => <div key={index}><dt>{axisNames[index]} · {axis.label}</dt><dd>{formatValue([active.point.x, active.point.y, active.point.z][index]!)}</dd></div>)}</dl>
-            <span>Open for details</span>
           </ChartTooltip>
         )}
       </div>

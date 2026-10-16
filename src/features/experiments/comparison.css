@@ -4,7 +4,7 @@
 .app-sidebar .sidebar-link[aria-current='page'] { background: #eef2ff; color: var(--accent-dark); }
 .comparison-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px; padding: 22px 24px 16px; }
 .comparison-baseline { display: flex; flex-direction: column; gap: 7px; min-width: 0; max-width: 100%; font-size: 12px; color: var(--muted); }
-.comparison-baseline select { min-height: 42px; max-width: 100%; padding: 8px 12px; border: 1px solid var(--border); background: white; color: #35425a; font-size: 13px; }
+.comparison-baseline select { min-height: 42px; max-width: 100%; padding: 8px 2px; border: 0; border-bottom: 1px solid #dce1ea; border-radius: 0; background: transparent; color: #35425a; font-size: 13px; }
 .comparison-toggle { display: flex; align-items: center; gap: 9px; min-height: 42px; font-size: 13px; }
 .comparison-edit { margin-left: auto; }
 .comparison-summary { padding: 0 24px 18px; font-size: 12px; line-height: 1.6; color: var(--muted); }

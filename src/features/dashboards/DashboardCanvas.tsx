@@ -40,7 +40,7 @@ export function DashboardCanvas({ dashboard, repository, selectedIds, onAction, 
   const dropFit = sortable.drag?.targetId ? packed.fitFor(sortable.drag.id, sortable.drag.targetId) : {}
   const willResize = Object.keys(dropFit).length > 0
   return <>
-    <p className="dashboard-canvas-help" id={sortable.instructionsId}>Drag a plot by its handle to rearrange it; larger plots shrink to fit their destination. Drag its bottom corner handle to resize; plots automatically fill available gaps.<span className="sr-only"> Keyboard: focus the move handle and use arrow keys or Home/End.</span></p>
+    <p className="sr-only" id={sortable.instructionsId}>Drag a plot by its handle to rearrange it; larger plots shrink to fit their destination. Drag its bottom corner handle to resize; plots automatically fill available gaps. Keyboard: focus the move handle and use arrow keys or Home/End.</p>
     <p className="sr-only" id={resize.instructionsId}>Drag to change plot width and height. Keyboard: left/right move the resize edge, up/down change height; hold Shift for larger steps. For right-side plots, drag or press left to widen. Escape cancels resizing.</p>
     <p className="sr-only" role="status" aria-live="polite">{sortable.announcement}</p>
     <p className="sr-only" role="status" aria-live="polite">{resize.announcement}</p>
@@ -53,7 +53,6 @@ export function DashboardCanvas({ dashboard, repository, selectedIds, onAction, 
         dropPosition={sortable.drag?.targetId === widget.id && from !== to ? (from < to ? 'after' : 'before') : undefined} />)}
       <button data-layout-id={addTileId} style={packed.styleFor(addTileId)} className="dashboard-add-tile" disabled={!repository.getProperties().length} onClick={onAddPlot}>
         <span aria-hidden="true">+</span><strong>{dashboard.widgets.length ? 'Add another plot' : 'Create your first plot'}</strong>
-        <small>Choose axes and see your data live</small>
       </button>
     </div>
     {sortable.drag && <div className="dashboard-drag-preview" aria-hidden="true" style={{ left: sortable.drag.x + 14, top: sortable.drag.y + 14 }}>

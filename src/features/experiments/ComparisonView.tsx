@@ -1,5 +1,6 @@
 import { compareExperiments, type Experiment, type PropertyDefinition } from '../../data'
 import { formatValue } from './format'
+import { compareWithAverage } from './averageComparison'
 import { Icon } from './Icon'
 import './comparison.css'
 
@@ -16,9 +17,21 @@ interface ComparisonViewProps {
   onExplore: () => void
 }
 
-function formatDelta(value: number | undefined): string {
-  if (value === undefined) return 'Δ unavailable'
-  return `Δ ${value > 0 ? '+' : ''}${formatValue(value)}`
+function ComparisonDelta({ value, reference, delta }: {
+  value: number | undefined
+  reference: number | undefined
+  delta: number | undefined
+}) {
+  // Suppress subtraction noise in the display without rounding the stored comparison.
+  const difference = delta !== undefined && compareWithAverage(value, reference) === 'equal' ? 0 : delta
+  const formatted = difference === undefined ? undefined : `${difference > 0 ? '+' : ''}${formatValue(difference)}`
+  return <span
+    className={`comparison-delta ${difference === undefined || difference === 0
+      ? '' : difference > 0 ? 'delta-positive' : 'delta-negative'}`}
+    aria-label={formatted === undefined ? 'Difference from baseline unavailable' : `Difference from baseline: ${formatted}`}
+  >
+    {formatted === undefined ? 'Δ unavailable' : `Δ ${formatted}`}
+  </span>
 }
 
 export function ComparisonView({
@@ -70,7 +83,9 @@ export function ComparisonView({
           />
           Show differences only
         </label>
-        <button className="button comparison-edit" onClick={onExplore}>Edit selection</button>
+        <button className="icon-button comparison-edit" aria-label="Edit selection" title="Edit selection" onClick={onExplore}>
+          <Icon name="edit" />
+        </button>
       </div>
 
       <div className="comparison-summary">
@@ -152,15 +167,8 @@ export function ComparisonView({
                           {cell.experimentId === comparison.baselineId ? (
                             <span className="comparison-delta">Reference</span>
                           ) : (
-                            <span
-                              className={`comparison-delta ${cell.delta === undefined || cell.delta === 0
-                                ? '' : cell.delta > 0 ? 'delta-positive' : 'delta-negative'}`}
-                              aria-label={cell.delta === undefined
-                                ? 'Difference from baseline unavailable'
-                                : `Difference from baseline: ${cell.delta > 0 ? '+' : ''}${formatValue(cell.delta)}`}
-                            >
-                              {formatDelta(cell.delta)}
-                            </span>
+                            <ComparisonDelta value={cell.value} delta={cell.delta}
+                              reference={row.values.find(value => value.experimentId === comparison.baselineId)?.value} />
                           )}
                         </td>
                       ))}

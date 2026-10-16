@@ -40,7 +40,6 @@ export function ScatterPlot({ points, xLabel, yLabel, highlightedIds = [], forma
             <div><dt>X · {xLabel}</dt><dd>{formatValue(activePoint.x)}</dd></div>
             <div><dt>Y · {yLabel}</dt><dd>{formatValue(activePoint.y)}</dd></div>
           </dl>
-          <span>Open for details</span>
         </ChartTooltip>
       )}
     >

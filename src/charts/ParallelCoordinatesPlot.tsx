@@ -63,11 +63,11 @@ export function ParallelCoordinatesPlot({ dimensions, lines, selectedIds, onOpen
         </g>})}
       </svg>
     </div>
-    <div className="parallel-active-details" aria-live="polite">
+    <div aria-live="polite">{(activeAxis || active) && <div className="parallel-active-details">
       {activeAxis ? <><strong>{activeAxis.label} ({activeAxis.group === 'inputs' ? 'Input' : 'Output'})</strong> · Axis range {activeAxisRange[0]} to {activeAxisRange[1]}</>
         : active ? <><strong>{active.label}</strong><dl>{dimensions.map((dimension, index) => <div key={dimension.id}>
         <dt>{dimension.label} ({dimension.group === 'inputs' ? 'Input' : 'Output'})</dt><dd>{active.values[index]}</dd>
-      </div>)}</dl></> : <span>Hover over or focus a line for its values, or an axis label for its full name and scale.</span>}
-    </div>
+      </div>)}</dl></> : null}
+    </div>}</div>
   </div>
 }

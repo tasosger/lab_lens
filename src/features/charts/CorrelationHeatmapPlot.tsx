@@ -69,9 +69,8 @@ export function CorrelationHeatmapPlot({ columns, matrix, onInspect }: {
         </tr>)}</tbody>
       </table>
     </div>
-    <div className="heatmap-active-details" aria-live="polite">
-      {activeCell ? <><strong>{propertyLabel(activeCell.y)} × {propertyLabel(activeCell.x)}</strong>: {correlationDescription(activeCell)} · n = {activeCell.count}</>
-        : <span>Scroll to explore the matrix. Hover over or focus a cell for details; use arrow keys to move between cells and Enter to open its scatterplot.</span>}
+    <div aria-live="polite">
+      {activeCell && <div className="heatmap-active-details"><strong>{propertyLabel(activeCell.y)} × {propertyLabel(activeCell.x)}</strong>: {correlationDescription(activeCell)} · n = {activeCell.count}</div>}
     </div>
   </>
 }

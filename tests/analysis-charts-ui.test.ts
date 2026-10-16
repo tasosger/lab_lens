@@ -96,7 +96,7 @@ describe('analysis chart rendering and controls', () => {
     assert.match(heatmap, /Use arrow keys/)
     assert.match(heatmap, /Tab leaves the matrix/)
     assert.match(heatmap, /data-values="false"/)
-    assert.match(heatmap, /Hover over or focus a cell/)
+    assert.doesNotMatch(heatmap, /Hover over or focus a cell/)
     assert.doesNotMatch(heatmap, /heatmap-scroll|min-width/)
 
     const parallel = renderToStaticMarkup(createElement(ExperimentChartView, { ...props,

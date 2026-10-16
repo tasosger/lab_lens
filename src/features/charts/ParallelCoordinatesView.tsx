@@ -29,8 +29,6 @@ export function ParallelCoordinatesView({ id, showControls, configuration, onCha
         <span className="chart-legend"><span className="chart-legend-dot" />All matching<span className="chart-legend-dot selected" />Selected subset</span>
       </div>
       <ParallelCoordinatesPlot dimensions={data.dimensions} lines={data.lines} selectedIds={selectedIds} onOpen={onOpen} />
-      <p className="chart-help">Each line is one experiment. Every axis uses its own scale; line heights compare relative values, not units across properties.
-        Click a line to open its experiment. Only experiments with values on every chosen axis are shown.</p>
       <details className="chart-data"><summary>View experiment values ({data.lines.length})</summary>
         <div className="chart-data-scroll" tabIndex={0} role="region" aria-label="Parallel coordinates values">
           <table><caption className="sr-only">Recorded values in the same order as the parallel coordinate axes</caption>

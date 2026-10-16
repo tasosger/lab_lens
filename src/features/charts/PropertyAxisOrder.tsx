@@ -22,8 +22,8 @@ export function PropertyAxisOrder({ properties, value, onChange, scrollContainer
   const to = value.findIndex(id => id === sortable.drag?.targetId)
 
   return <>
-    <p id={sortable.instructionsId} className="property-axis-help">Drag axes to change their left-to-right order.
-      <span className="sr-only"> Keyboard: focus a handle and use arrow keys or Home/End. Escape cancels a drag.</span>
+    <p id={sortable.instructionsId} className="sr-only">Drag axes to change their left-to-right order.
+      Keyboard: focus a handle and use arrow keys or Home/End. Escape cancels a drag.
     </p>
     <p className="sr-only" role="status" aria-live="polite">{sortable.announcement}</p>
     <ol ref={sortable.container} className={`property-axis-order${sortable.drag ? ' is-dragging' : ''}`} aria-label="Axis order, left to right">

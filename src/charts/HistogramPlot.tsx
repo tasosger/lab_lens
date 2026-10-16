@@ -33,7 +33,6 @@ export function HistogramPlot({ data, label, selectedIds, selectedBin, onSelectB
           <strong>{histogramBinLabel(active, formatValue)}</strong>
           <dl><div><dt>Experiments</dt><dd>{active.items.length}</dd></div>
             <div><dt>Selected</dt><dd>{selectedCount(active)}</dd></div></dl>
-          <span>Open to inspect experiments</span>
         </ChartTooltip>
       )}>
       {layout => data.bins.map((bin, index) => {

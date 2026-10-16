@@ -65,8 +65,8 @@ function FilterRuleGroup({ group, properties, experiments, dispatch, root = fals
         <button type="button" aria-pressed={group.operator === 'or'}
           onClick={() => dispatch({ type: 'filter-mode', groupId: group.id, mode: 'or' })}>Match any <small>OR</small></button>
       </div>
-      {!root && <button type="button" className="text-button" aria-label="Remove condition group"
-        onClick={() => { dispatch({ type: 'remove-filter', id: group.id }); closeEditor() }}>Remove group</button>}
+      {!root && <button type="button" className="icon-button" aria-label="Remove condition group" title="Remove condition group"
+        onClick={() => { dispatch({ type: 'remove-filter', id: group.id }); closeEditor() }}><Icon name="close" /></button>}
     </div>}
     <div className="filter-rule-list">
       {group.filters.map((node, index) => <div key={node.id} className="filter-rule-item">
@@ -83,7 +83,7 @@ function FilterRuleGroup({ group, properties, experiments, dispatch, root = fals
                 <span className="filter-property-kind">{property?.group === 'inputs' ? 'Input' : 'Output'}</span>
                 <span>{description}</span><Icon name="edit" />
               </button>
-              <button type="button" className="chip-remove" aria-label={'Remove filter ' + description}
+              <button type="button" className="chip-remove" aria-label={'Remove filter ' + description} title="Remove filter"
                 onClick={() => { dispatch({ type: 'remove-filter', id: node.id }); if (editing) closeEditor() }}><Icon name="close" /></button>
             </div>
             {editing && <FilterBuilder properties={properties} experiments={experiments} initialCondition={node.condition}

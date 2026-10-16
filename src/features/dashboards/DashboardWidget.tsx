@@ -5,6 +5,7 @@ import type { DashboardWidget as Widget } from '../../dashboards/types'
 import { ExperimentChartView } from '../charts/ExperimentChartView'
 import type { ChartAction } from '../charts/chartConfiguration'
 import type { DashboardAction } from './dashboardReducer'
+import { Icon } from '../experiments/Icon'
 
 export function DashboardWidget({ widget, repository, selectedIds, initiallyEditing = false, dragHandleProps, dragging, dropPosition,
   layoutStyle, resizeHandleProps, resizing, onAction, onOpen }: {
@@ -43,8 +44,11 @@ export function DashboardWidget({ widget, repository, selectedIds, initiallyEdit
             </svg>
           </button>
           <h2 className="dashboard-widget-name">{widget.title || 'Untitled plot'}</h2>
-          <button className="button dashboard-edit-button" aria-expanded={editing} aria-controls={editing ? `${id}-settings ${id}-controls` : undefined}
-            aria-label={`${editing ? 'Finish editing' : 'Edit'} ${widget.title || 'plot'}`} onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>
+          <button className="icon-button dashboard-edit-button" aria-expanded={editing} aria-controls={editing ? `${id}-settings ${id}-controls` : undefined}
+            aria-label={`${editing ? 'Finish editing' : 'Edit'} ${widget.title || 'plot'}`}
+            title={editing ? 'Finish editing plot' : 'Edit plot'} onClick={() => setEditing(!editing)}>
+            <Icon name={editing ? 'check' : 'edit'} />
+          </button>
         </div>
         {editing && <div id={`${id}-settings`} className="dashboard-widget-settings" role="group" aria-label="Plot settings">
           <label className="dashboard-widget-title">Plot title
