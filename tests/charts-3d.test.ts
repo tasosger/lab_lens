@@ -1,10 +1,11 @@
+import { defaultChartAxes, defaultChartZ } from '../src/chart-model/scatter.ts'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { numericDomain } from '../src/charts/numericScale.ts'
 import { cameraAfterDrag, cameraAfterPan, cameraAfterWheel, cameraAtZoom, create3DProjector, DEFAULT_ORBIT_CAMERA, interpolateZoomCamera, isRotationDrag, MAX_ZOOM, MIN_ZOOM, normalizeCamera, projectUnit3D, type OrbitCamera } from '../src/charts/projection3D.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
 import { createExperimentRepository } from '../src/data/repository.ts'
-import { buildScatter3DData, defaultChartAxes, defaultChartZ } from '../src/features/charts/scatterData.ts'
+import { buildScatter3DData } from '../src/features/charts/scatterData.ts'
 import { createWorkspaceState, getWorkspaceQuery, workspaceReducer } from '../src/features/experiments/workspaceReducer.ts'
 
 describe('three-dimensional scatterplot data', () => {
@@ -185,17 +186,17 @@ describe('3D workspace state', () => {
     let state = createWorkspaceState(getExperimentRepository().getProperties())
     state = workspaceReducer(state, { type: 'chart-mode', mode: '3d' })
     state = workspaceReducer(state, { type: 'toggle-selection', id: 'EXP_A' })
-    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: state.chartAxes.x!, operator: 'between', min: 0, max: 100 } })
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: state.chart.chartAxes.x!, operator: 'between', min: 0, max: 100 } })
     const before = structuredClone(state)
     for (const pair of ['xy', 'xz', 'yz'] as const) {
       const swapped = workspaceReducer(state, { type: 'swap-chart-axes', pair })
-      assert.deepEqual(swapped.chartAxes, pair === 'xy'
-        ? { x: state.chartAxes.y, y: state.chartAxes.x }
-        : pair === 'xz' ? { x: state.chartZ, y: state.chartAxes.y } : { x: state.chartAxes.x, y: state.chartZ })
-      assert.equal(swapped.chartZ, pair === 'xz' ? state.chartAxes.x : pair === 'yz' ? state.chartAxes.y : state.chartZ)
+      assert.deepEqual(swapped.chart.chartAxes, pair === 'xy'
+        ? { x: state.chart.chartAxes.y, y: state.chart.chartAxes.x }
+        : pair === 'xz' ? { x: state.chart.chartZ, y: state.chart.chartAxes.y } : { x: state.chart.chartAxes.x, y: state.chart.chartZ })
+      assert.equal(swapped.chart.chartZ, pair === 'xz' ? state.chart.chartAxes.x : pair === 'yz' ? state.chart.chartAxes.y : state.chart.chartZ)
       assert.deepEqual(getWorkspaceQuery(swapped), getWorkspaceQuery(state))
       assert.deepEqual(swapped.selectedIds, state.selectedIds)
-      assert.deepEqual(swapped.chartCamera, state.chartCamera)
+      assert.deepEqual(swapped.chart.chartCamera, state.chart.chartCamera)
       assert.deepEqual(workspaceReducer(swapped, { type: 'swap-chart-axes', pair }), state)
     }
     assert.deepEqual(state, before)
@@ -203,24 +204,24 @@ describe('3D workspace state', () => {
 
   it('preserves axes, camera, selections and numeric filters across mode and view switches', () => {
     let state = createWorkspaceState(getExperimentRepository().getProperties())
-    assert.equal(state.chartMode, '2d')
+    assert.equal(state.chart.chartMode, '2d')
     state = workspaceReducer(state, { type: 'chart-mode', mode: '3d' })
     state = workspaceReducer(state, { type: 'chart-z', propertyId: 'outputs:Viscosity' })
     state = workspaceReducer(state, { type: 'chart-camera', camera: { yaw: 80, pitch: 10, zoom: 1.2 } })
     state = workspaceReducer(state, { type: 'toggle-selection', id: 'EXP_A' })
-    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: state.chartAxes.x!, operator: 'between', min: 0, max: 1000 } })
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: state.chart.chartAxes.x!, operator: 'between', min: 0, max: 1000 } })
     const query = getWorkspaceQuery(state)
-    const axes = state.chartAxes
+    const axes = state.chart.chartAxes
     state = workspaceReducer(state, { type: 'chart-mode', mode: '2d' })
     state = workspaceReducer(state, { type: 'view', view: 'compare' })
     state = workspaceReducer(state, { type: 'view', view: 'charts' })
     state = workspaceReducer(state, { type: 'chart-mode', mode: '3d' })
     assert.deepEqual(getWorkspaceQuery(state), query)
-    assert.deepEqual(state.chartAxes, axes)
-    assert.equal(state.chartZ, 'outputs:Viscosity')
-    assert.deepEqual(state.chartCamera, { yaw: 80, pitch: 10, zoom: 1.2 })
+    assert.deepEqual(state.chart.chartAxes, axes)
+    assert.equal(state.chart.chartZ, 'outputs:Viscosity')
+    assert.deepEqual(state.chart.chartCamera, { yaw: 80, pitch: 10, zoom: 1.2 })
     assert.deepEqual(state.selectedIds, ['EXP_A'])
     state = workspaceReducer(state, { type: 'swap-chart-axes' })
-    assert.equal(state.chartZ, 'outputs:Viscosity')
+    assert.equal(state.chart.chartZ, 'outputs:Viscosity')
   })
 })

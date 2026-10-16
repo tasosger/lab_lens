@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useDetailsDropdown } from '../../components/useDetailsDropdown'
 import type { PropertyDefinition, PropertyId } from '../../data'
-import { Icon } from './Icon'
+import { Icon } from '../../components/Icon'
 
 export function FilterPropertyPicker({ properties, value, onChange }: {
   properties: readonly PropertyDefinition[]

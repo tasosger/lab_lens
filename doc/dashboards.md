@@ -23,6 +23,8 @@ The main view shows the dashboard name as a heading and keeps **Save dashboard**
 | `useDashboardResize`, `usePackedDashboard` | Resize previews, keyboard sizing, measured card heights, and responsive packing. |
 | `src/components/useSortableGrid.ts`, `reorder.ts` | Pointer/touch sorting, keyboard moves, and auto-scroll. |
 | `useUnsavedNavigation.ts`, `navigationGuard.ts` | Save-before-leaving prompts and failed-save protection. |
+| `DashboardChart.tsx` | Memoized chart body with stable dataset and callbacks, independent of layout previews and title edits. |
+| `src/chart-model/validation.ts` | Chart-setting validation shared independently of the dashboard storage boundary. |
 | `ExperimentChartView.tsx` | Shared chart rendering; dashboard controls appear only while editing. |
 
 ## Persistence and filters

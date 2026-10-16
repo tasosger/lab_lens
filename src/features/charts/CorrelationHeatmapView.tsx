@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { buildCorrelationMatrix, matchingExperiments, selectedProperties } from './analysisData'
 import { ChartTypeSelect } from './ChartTypeSelect'
 import type { ChartViewProps } from './ChartViewProps'
@@ -7,10 +8,11 @@ import './analysisCharts.css'
 
 export function CorrelationHeatmapView({ id, showControls, configuration, onChartAction, experiments, matchingIds,
   properties, isFiltered, onResetQuery }: ChartViewProps) {
-  const columns = selectedProperties(properties, configuration.heatmapX)
-  const rows = selectedProperties(properties, configuration.heatmapY)
-  const matching = matchingExperiments(experiments, matchingIds)
-  const matrix = buildCorrelationMatrix(matching, columns, rows, configuration.hideZeroInputs)
+  const columns = useMemo(() => selectedProperties(properties, configuration.heatmapX), [properties, configuration.heatmapX])
+  const rows = useMemo(() => selectedProperties(properties, configuration.heatmapY), [properties, configuration.heatmapY])
+  const matching = useMemo(() => matchingExperiments(experiments, matchingIds), [experiments, matchingIds])
+  const matrix = useMemo(() => buildCorrelationMatrix(matching, columns, rows, configuration.hideZeroInputs),
+    [matching, columns, rows, configuration.hideZeroInputs])
   return <section id={id} className="heatmap-view" aria-label="Correlation heatmap">
     {showControls && <div id={`${id}-controls`} className="chart-controls heatmap-controls">
       <ChartTypeSelect value="heatmap" onChange={chartType => onChartAction({ type: 'chart-type', chartType })} />

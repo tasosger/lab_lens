@@ -1,12 +1,14 @@
+import { useMemo } from 'react'
 import { ChartDataTable } from '../../charts/ChartDataTable'
 import { ScatterPlot } from '../../charts/ScatterPlot'
 import type { Experiment, PropertyDefinition, PropertyId } from '../../data'
-import { formatValue } from '../experiments/format'
-import { Icon } from '../experiments/Icon'
-import { buildScatterData, type ChartAxes } from './scatterData'
+import { formatValue } from '../../format.ts'
+import { Icon } from '../../components/Icon'
+import { buildScatterData } from './scatterData'
+import type { ChartAxes } from '../../chart-model/scatter.ts'
 import type { AxisSwap } from './AxisSwapMenu'
 import { ScatterPlotControls } from './ScatterPlotControls'
-import type { ChartType } from './chartConfiguration'
+import type { ChartType } from '../../chart-model/configuration.ts'
 import './scatterView.css'
 
 interface ScatterPlotViewProps {
@@ -28,9 +30,12 @@ interface ScatterPlotViewProps {
 export function ScatterPlotView({ id = 'charts', showControls = true, experiments, matchingIds, properties, axes, selectedIds, isFiltered, onAxisChange, onSwapAxes, onOpen, onResetQuery, onTypeChange }: ScatterPlotViewProps) {
   const xProperty = properties.find((property) => property.id === axes.x)
   const yProperty = properties.find((property) => property.id === axes.y)
-  const matching = new Set(matchingIds)
-  const matchingExperiments = experiments.filter(experiment => matching.has(experiment.id))
-  const data = xProperty && yProperty ? buildScatterData(matchingExperiments, xProperty, yProperty) : undefined
+  const matchingExperiments = useMemo(() => {
+    const matching = new Set(matchingIds)
+    return experiments.filter(experiment => matching.has(experiment.id))
+  }, [experiments, matchingIds])
+  const data = useMemo(() => xProperty && yProperty ? buildScatterData(matchingExperiments, xProperty, yProperty) : undefined,
+    [matchingExperiments, xProperty, yProperty])
 
   return (
     <section id={id} className="scatter-view" aria-label="Scatterplot">

@@ -1,5 +1,5 @@
 import { useDetailsDropdown } from '../../components/useDetailsDropdown'
-import { Icon } from '../experiments/Icon'
+import { Icon } from '../../components/Icon'
 
 export type AxisSwap = 'xy' | 'xz' | 'yz'
 

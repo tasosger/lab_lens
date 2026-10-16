@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react'
 import type { PropertyStatistics } from '../../data'
 import { averageDeviationStrength, compareWithAverage } from './averageComparison'
-import { formatAverage, formatValue } from './format'
-import { Icon } from './Icon'
+import { formatAverage, formatValue } from '../../format.ts'
+import { Icon } from '../../components/Icon'
 
 const labels = {
   above: 'Above average',

@@ -1,5 +1,6 @@
 import type { FilterExpression, FilterGroup, NumericFilter, PropertyDefinition } from '../../data/types.ts'
-import { formatValue, operatorLabels } from './format.ts'
+import { operatorLabels } from './filterLabels.ts'
+import { formatValue } from '../../format.ts'
 
 export interface AppliedFilter {
   id: number

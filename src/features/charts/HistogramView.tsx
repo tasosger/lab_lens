@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { HistogramPlot } from '../../charts/HistogramPlot'
 import { MAX_HISTOGRAM_BINS, histogramBinLabel, type HistogramBin, type HistogramBinCount } from '../../charts/histogram'
 import { PropertySelect } from '../../components/PropertySelect'
 import type { Experiment, PropertyDefinition, PropertyId } from '../../data'
-import { formatValue } from '../experiments/format'
+import { formatValue } from '../../format.ts'
 import { ChartTypeSelect } from './ChartTypeSelect'
-import type { ChartType } from './chartConfiguration'
+import type { ChartType } from '../../chart-model/configuration.ts'
 import { buildExperimentHistogram } from './histogramData'
 import './scatterView.css'
 
@@ -30,7 +30,8 @@ export function HistogramView({ id, showControls = true, experiments, matchingId
 }) {
   const [inspected, setInspected] = useState<string | null>(null)
   const property = properties.find(item => item.id === propertyId)
-  const data = property ? buildExperimentHistogram(experiments, property, binCount, matchingIds) : undefined
+  const data = useMemo(() => property ? buildExperimentHistogram(experiments, property, binCount, matchingIds) : undefined,
+    [experiments, property, binCount, matchingIds])
   const selected = new Set(selectedIds)
   const inspectedBin = data?.bins.find(bin => `${propertyId}:${binKey(bin)}` === inspected)
   const inspect = (bin: HistogramBin) => setInspected(`${propertyId}:${binKey(bin)}`)

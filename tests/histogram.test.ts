@@ -7,7 +7,7 @@ import { createDashboardRepository } from '../src/dashboards/repository.ts'
 import { decodeDashboardStore, DashboardValidationError } from '../src/dashboards/validation.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
 import { createExperimentRepository } from '../src/data/repository.ts'
-import { createChartConfiguration, reduceChartConfiguration } from '../src/features/charts/chartConfiguration.ts'
+import { createChartConfiguration, reduceChartConfiguration } from '../src/chart-model/configuration.ts'
 import { buildExperimentHistogram } from '../src/features/charts/histogramData.ts'
 import { createDashboardDraft, dashboardReducer } from '../src/features/dashboards/dashboardReducer.ts'
 import { createWorkspaceState, getWorkspaceQuery, workspaceReducer } from '../src/features/experiments/workspaceReducer.ts'
@@ -155,15 +155,15 @@ describe('histogram chart settings and saved dashboards', () => {
     chart = workspaceReducer(chart, { type: 'view', view: 'explore' })
     chart = workspaceReducer(chart, { type: 'view', view: 'charts' })
     chart = workspaceReducer(chart, { type: 'chart-type', chartType: 'scatterplot' })
-    assert.equal(chart.chartMode, '3d')
-    assert.deepEqual(chart.chartAxes, initial.chartAxes)
-    assert.deepEqual(chart.chartCamera, initial.chartCamera)
-    assert.equal(chart.histogramProperty, additive.id)
-    assert.equal(chart.histogramBins, 8)
-    assert.equal(initial.chartType, 'scatterplot')
-    assert.equal(initial.histogramBins, 'auto')
+    assert.equal(chart.chart.chartMode, '3d')
+    assert.deepEqual(chart.chart.chartAxes, initial.chart.chartAxes)
+    assert.deepEqual(chart.chart.chartCamera, initial.chart.chartCamera)
+    assert.equal(chart.chart.histogramProperty, additive.id)
+    assert.equal(chart.chart.histogramBins, 8)
+    assert.equal(initial.chart.chartType, 'scatterplot')
+    assert.equal(initial.chart.histogramBins, 'auto')
     assert.equal(createChartConfiguration([]).histogramProperty, null)
-    assert.equal(reduceChartConfiguration(chart, { type: 'histogram-bins', bins: 0 }), chart)
+    assert.equal(reduceChartConfiguration(chart.chart, { type: 'histogram-bins', bins: 0 }), chart.chart)
   })
 
   it('saves and reloads mixed chart types without affecting sibling widgets or scatterplot axes', () => {

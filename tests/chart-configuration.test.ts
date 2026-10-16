@@ -1,33 +1,70 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { getExperimentRepository } from '../src/data/index.ts'
-import { createChartConfiguration, reduceChartConfiguration, scatterplotModeForValueCount } from '../src/features/charts/chartConfiguration.ts'
+import { createExperimentRepository } from '../src/data/repository.ts'
+import { createChartConfiguration, reduceChartConfiguration } from '../src/chart-model/configuration.ts'
+import { chartDefinitions, chartTypes, isChartType } from '../src/chart-model/registry.ts'
+import { validateChartConfiguration } from '../src/chart-model/validation.ts'
+import { ChartValidationError } from '../src/chart-model/validationContext.ts'
+import { createWorkspaceState, workspaceReducer } from '../src/features/experiments/workspaceReducer.ts'
+import { experimentFixture } from './fixtures.ts'
 
-describe('scatterplot value selection', () => {
-  it('adds and removes depth while retaining chosen properties and the camera', () => {
-    const initial = createChartConfiguration(getExperimentRepository().getProperties())
-    let chart = reduceChartConfiguration(initial, { type: 'chart-mode', mode: scatterplotModeForValueCount(3) })
-    assert.equal(chart.chartMode, '3d')
-    chart = reduceChartConfiguration(chart, { type: 'chart-z', propertyId: 'outputs:Viscosity' })
-    chart = reduceChartConfiguration(chart, { type: 'chart-camera', camera: { yaw: 90, pitch: 40, zoom: 1.2 } })
-    const threeValues = structuredClone(chart)
-    chart = reduceChartConfiguration(chart, { type: 'chart-mode', mode: scatterplotModeForValueCount(2) })
-    assert.equal(chart.chartMode, '2d')
-    assert.deepEqual(chart.chartAxes, initial.chartAxes)
-    chart = reduceChartConfiguration(chart, { type: 'chart-mode', mode: scatterplotModeForValueCount(3) })
-    assert.deepEqual(chart, threeValues)
+const properties = createExperimentRepository(experimentFixture()).getProperties()
+
+describe('shared chart model', () => {
+  it('round-trips every registered chart independently of a dashboard, including an empty dataset', () => {
+    for (const dataset of [properties, []]) for (const chartType of chartTypes) {
+      const configuration = { ...createChartConfiguration(dataset), chartType }
+      const decoded = validateChartConfiguration(JSON.parse(JSON.stringify(configuration)), dataset)
+      assert.deepEqual(decoded, configuration)
+      assert.notEqual(decoded.heatmapX, configuration.heatmapX)
+      assert.ok(chartDefinitions[chartType].propertyIds(decoded).every(id => id === null || dataset.some(p => p.id === id)))
+    }
   })
 
-  it('rejects a fourth value with a useful error and retains the last valid plot', () => {
-    let chart = createChartConfiguration(getExperimentRepository().getProperties())
-    chart = reduceChartConfiguration(chart, { type: 'chart-mode', mode: scatterplotModeForValueCount(3) })
-    const lastValidPlot = chart
-    assert.throws(() => {
-      chart = reduceChartConfiguration(chart, { type: 'chart-mode', mode: scatterplotModeForValueCount(4) })
-    }, { name: 'RangeError', message: 'Scatterplots support a maximum of 3 values. Remove the Z axis before adding another.' })
-    assert.strictEqual(chart, lastValidPlot)
-    for (const count of [0, 1, 2.5, 100, NaN, Infinity]) {
-      assert.throws(() => scatterplotModeForValueCount(count), RangeError)
+  it('preserves legacy axes/camera while supplying defaults for newer settings and removing unknown fields', () => {
+    const defaults = createChartConfiguration(properties)
+    const legacy = { chartAxes: defaults.chartAxes, chartMode: '3d', chartZ: defaults.chartZ,
+      chartCamera: defaults.chartCamera, plotRanges: { x: [0, 1] } }
+    const decoded = validateChartConfiguration(legacy, properties)
+    assert.deepEqual(decoded, { ...defaults, chartMode: '3d' })
+    assert.deepEqual(chartDefinitions.scatterplot.propertyIds(decoded), [defaults.chartAxes.x, defaults.chartAxes.y])
+    assert.equal('plotRanges' in decoded, false)
+  })
+
+  it('rejects unknown types and malformed inactive settings rather than silently replacing them', () => {
+    const defaults = createChartConfiguration(properties)
+    for (const value of ['unknown', '__proto__', 'constructor', null, 1]) {
+      assert.equal(isChartType(value), false)
+      assert.throws(() => validateChartConfiguration({ ...defaults, chartType: value }, properties), ChartValidationError)
     }
+    for (const patch of [
+      { pieGrouping: 'sum' }, { histogramBins: 0 }, { pieBins: Infinity },
+      { parallelProperties: ['outputs:Missing'] }, { heatmapX: [properties[0].id, properties[0].id] },
+      { chartAxes: { x: null, y: 'inputs:Missing' } }, { hideZeroInputs: 'true' },
+      { chartCamera: { yaw: 0, pitch: 0, zoom: NaN } },
+    ]) assert.throws(() => validateChartConfiguration({ ...defaults, ...patch }, properties), ChartValidationError)
+  })
+
+  it('keeps chart identity stable across unrelated workspace actions and preserves inactive choices', () => {
+    const initial = createWorkspaceState(properties)
+    let state = workspaceReducer(initial, { type: 'toggle-selection', id: 'EXP_A' })
+    state = workspaceReducer(state, { type: 'search', value: 'EXP' })
+    state = workspaceReducer(state, { type: 'open-experiment', id: 'EXP_A' })
+    assert.strictEqual(state.chart, initial.chart)
+    state = workspaceReducer(state, { type: 'histogram-bins', bins: 7 })
+    assert.notStrictEqual(state.chart, initial.chart)
+    for (const chartType of chartTypes) state = workspaceReducer(state, { type: 'chart-type', chartType })
+    assert.equal(state.chart.histogramBins, 7)
+    assert.deepEqual(state.chart.chartAxes, initial.chart.chartAxes)
+    assert.deepEqual(state.selectedIds, ['EXP_A'])
+    assert.strictEqual(workspaceReducer(state, { type: 'histogram-bins', bins: 0 }), state)
+  })
+
+  it('copies axis lists so caller mutations cannot change configured charts', () => {
+    const ids = properties.slice(0, 2).map(property => property.id)
+    const config = reduceChartConfiguration(createChartConfiguration(properties), { type: 'parallel-properties', propertyIds: ids })
+    const expected = [...ids]
+    ids.reverse()
+    assert.deepEqual(config.parallelProperties, expected)
   })
 })

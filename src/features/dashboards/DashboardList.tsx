@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Dashboard } from '../../dashboards/types'
 import { dashboardIsDirty, type DashboardDraft } from './dashboardReducer'
-import { Icon } from '../experiments/Icon'
+import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import { InlineNameEditor } from '../../components/InlineNameEditor'
 

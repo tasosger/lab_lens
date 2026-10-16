@@ -1,5 +1,5 @@
 import type { Experiment, PropertyDefinition } from '../../data'
-import type { ChartAction, ChartConfiguration } from './chartConfiguration'
+import type { ChartAction, ChartConfiguration } from '../../chart-model/configuration.ts'
 
 export interface ChartViewProps {
   id: string

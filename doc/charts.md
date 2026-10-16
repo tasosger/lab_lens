@@ -24,10 +24,11 @@ The Charts view offers Scatterplot, Histogram, Pie chart, Correlation heatmap, a
 | `AxisSwapMenu.tsx` | X/Y swap control, with outside-click, blur, and Escape dismissal. |
 | `ChartDataTable.tsx` | Expandable numeric alternative to the plot, including every overlapping point. |
 | `src/components/PropertySelect.tsx` | Reusable picker with input/output optgroups and stable property IDs. |
-| `src/features/charts/scatterData.ts` | Default experiment axes and adaptation of experiment records to generic points. |
+| `src/features/charts/scatterData.ts` | Adapt experiment records to generic points. Default axes live in `src/chart-model/scatter.ts`. |
 | `ScatterPlotView.tsx` | Experiment controls, empty states, missing-value count, and wiring to shared chart components. |
 | `ScatterPlotControls.tsx` | Shared X/Y property pickers and axis swapping for Charts and dashboard plots. |
-| `chartConfiguration.ts` | Shared chart defaults and setting changes; legacy Z/camera fields remain compatible with saved dashboards. |
+| `src/chart-model/` | React-free chart contracts, catalog, defaults, setting changes, and persisted-setting validation. |
+| `chartRenderers.tsx` | Exhaustive map of chart types to views with a common `ChartViewProps` contract. |
 | `workspaceReducer.ts` | Active view and axis choices, alongside shared query, selection, and detail state. |
 
 Components in `src/charts/` do not import experiment data or workspace state. Add another Cartesian chart by supplying marks to `CartesianChart`; another scatterplot use case can provide its own point adapter and activation callback. Chart types reuse property controls and the existing filter results without duplicating query logic. Rendering uses SVG or semantic HTML tables without charting dependencies.
@@ -98,3 +99,17 @@ Scatterplot range selection, numeric-bound controls, and faded out-of-range cont
 Axis domains follow the experiments actually plotted. When no experiments match, the chart shows an empty state with a reset action.
 
 `tests/charts.test.ts`, `tests/chart-filtering.test.ts`, and `tests/scatterplot-2d-ui.test.ts` cover data adaptation, scales, workspace filtering, and rendering. Dashboard tests cover legacy range cleanup. Run `npm test`, `npm run lint`, and `npm run build` from the app directory.
+
+## Adding a chart type
+
+1. Add its settings to `src/chart-model/types.ts` and its type-to-settings entry in `ChartSettingsByType`.
+2. Add a catalog entry in `registry.ts`: label, result hint, active property IDs, zero-input policy, defaults, and a validated settings reader. Compose its settings in `createChartConfiguration` and `validateChartConfiguration`; include defaults for older saved dashboards.
+3. Add the required actions and reducer cases in `configuration.ts`. Workspace chart actions delegate automatically; dashboard actions already use the same reducer.
+4. Implement an experiment adapter and a view accepting `ChartViewProps`, then register it in `chartRenderers.tsx`. Generic drawing/math belongs in `src/charts/`; experiment-specific behavior belongs in `src/features/charts/`.
+5. Test numerical edge cases, missing/zero semantics, persisted round-trips, and an interactive flow. Run `npm run check`.
+
+The type picker, result hints, and zero-input discovery consume the catalog automatically. Both Charts and dashboards dispatch through the same exhaustive renderer map. Unsupported saved chart types fail validation instead of falling through to a scatterplot.
+
+## Rendering boundaries
+
+Workspace chart settings have a stable identity across drawer/navigation/query changes. The shared chart dispatcher is memoized; each adapter memoizes expensive data preparation against its actual data/settings inputs. Dashboard layout wrappers can update independently of `DashboardChart`. Height context and ResizeObserver still update geometry when plots resize, without rerunning dataset queries. Mounted tests in `tests/mounted-ui.test.ts` verify these invalidation rules and interaction behavior.

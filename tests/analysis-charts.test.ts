@@ -10,7 +10,7 @@ import { createExperimentRepository } from '../src/data/repository.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
 import type { Experiment, PropertyId } from '../src/data/types.ts'
 import { buildCorrelationMatrix, buildParallelData, matchingExperiments, propertyData, selectedProperties } from '../src/features/charts/analysisData.ts'
-import { createChartConfiguration, reduceChartConfiguration, type ChartAction } from '../src/features/charts/chartConfiguration.ts'
+import { createChartConfiguration, reduceChartConfiguration, type ChartAction } from '../src/chart-model/configuration.ts'
 import { createDashboardDraft, dashboardReducer } from '../src/features/dashboards/dashboardReducer.ts'
 import { createWorkspaceState, getWorkspaceQuery, workspaceReducer } from '../src/features/experiments/workspaceReducer.ts'
 import { experimentFixture } from './fixtures.ts'
@@ -187,16 +187,16 @@ describe('analysis chart state and dashboard persistence', () => {
     state = workspaceReducer(state, { type: 'search', value: 'EXP_C' })
     for (const action of actions) state = workspaceReducer(state, action)
     for (const chartType of ['pie', 'heatmap', 'parallel', 'scatterplot'] as const) state = workspaceReducer(state, { type: 'chart-type', chartType })
-    assert.equal(state.pieProperty, strength.id)
-    assert.equal(state.pieGrouping, 'values')
-    assert.equal(state.pieBins, 7)
-    assert.deepEqual(state.parallelProperties, [strength.id, additive.id])
+    assert.equal(state.chart.pieProperty, strength.id)
+    assert.equal(state.chart.pieGrouping, 'values')
+    assert.equal(state.chart.pieBins, 7)
+    assert.deepEqual(state.chart.parallelProperties, [strength.id, additive.id])
     state = workspaceReducer(state, { type: 'inspect-heatmap-cell', xPropertyId: strength.id, yPropertyId: additive.id })
-    assert.equal(state.chartType, 'scatterplot')
-    assert.equal(state.chartMode, '2d')
-    assert.deepEqual(state.chartAxes, { x: strength.id, y: additive.id })
-    assert.deepEqual(state.heatmapX, [additive.id])
-    assert.deepEqual(state.heatmapY, [strength.id])
+    assert.equal(state.chart.chartType, 'scatterplot')
+    assert.equal(state.chart.chartMode, '2d')
+    assert.deepEqual(state.chart.chartAxes, { x: strength.id, y: additive.id })
+    assert.deepEqual(state.chart.heatmapX, [additive.id])
+    assert.deepEqual(state.chart.heatmapY, [strength.id])
     assert.equal(state.search, 'EXP_C')
   })
 

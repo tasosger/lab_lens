@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { PiePlot } from '../../charts/PiePlot'
 import { MAX_HISTOGRAM_BINS } from '../../charts/histogram'
 import { buildPieData, pieColor } from '../../charts/pie'
 import { PropertySelect } from '../../components/PropertySelect'
-import { formatValue } from '../experiments/format'
+import { formatValue } from '../../format.ts'
 import { matchingExperiments, propertyData } from './analysisData'
 import { ChartTypeSelect } from './ChartTypeSelect'
 import type { ChartViewProps } from './ChartViewProps'
@@ -14,9 +14,9 @@ export function PieChartView({ id, showControls, configuration, onChartAction, e
   const [inspected, setInspected] = useState<string | null>(null)
   const { pieProperty, pieGrouping, pieBins } = configuration
   const property = properties.find(p => p.id === pieProperty)
-  const matching = matchingExperiments(experiments, matchingIds)
-  const values = property ? propertyData(matching, property) : { items: [], omittedCount: 0 }
-  const data = buildPieData(values.items, pieGrouping, pieBins, formatValue)
+  const values = useMemo(() => property ? propertyData(matchingExperiments(experiments, matchingIds), property) : { items: [], omittedCount: 0 },
+    [experiments, matchingIds, property])
+  const data = useMemo(() => buildPieData(values.items, pieGrouping, pieBins, formatValue), [values.items, pieGrouping, pieBins])
   const key = `${pieProperty}:${pieGrouping}:${pieBins}`
   const slice = data.slices.find(slice => `${key}:${slice.id}` === inspected)
   const selected = new Set(selectedIds)

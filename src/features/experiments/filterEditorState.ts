@@ -15,7 +15,7 @@ export type FilterEditorAction =
   | { type: 'filter-mode'; mode: 'and' | 'or'; groupId?: number }
   | { type: 'clear-filters' }
 
-export function getFilterEditorTree(state: FilterEditorState): AppliedFilterGroup {
+export function getFilterEditorTree(state: Pick<FilterEditorState, 'filters' | 'filterMode'>): AppliedFilterGroup {
   return { id: 0, operator: state.filterMode, filters: state.filters }
 }
 

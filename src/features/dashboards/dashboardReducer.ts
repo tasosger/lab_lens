@@ -2,7 +2,7 @@ import type { Dashboard, DashboardTemplate, DashboardWidget } from '../../dashbo
 import { applyDashboardTemplate, templateSize } from '../../dashboards/layout.ts'
 import { reorderById } from '../../components/reorder.ts'
 import { isPlotDimensions, type PlotDimensions } from '../../dashboards/packing.ts'
-import { reduceChartConfiguration, type ChartAction } from '../charts/chartConfiguration.ts'
+import { reduceChartConfiguration, type ChartAction } from '../../chart-model/configuration.ts'
 
 export interface DashboardDraft {
   dashboard: Dashboard

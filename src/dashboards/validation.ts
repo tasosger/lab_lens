@@ -1,7 +1,6 @@
-import type { PropertyDefinition, PropertyId } from '../data/types.ts'
-import { normalizeCamera } from '../charts/projection3D.ts'
-import { isHistogramBinCount } from '../charts/histogram.ts'
-import { createChartConfiguration, isChartType, type ChartConfiguration } from '../features/charts/chartConfiguration.ts'
+import type { PropertyDefinition } from '../data/types.ts'
+import { validateChartConfiguration } from '../chart-model/validation.ts'
+import { ChartValidationError } from '../chart-model/validationContext.ts'
 import type { Dashboard, DashboardStore, DashboardWidget } from './types.ts'
 import { isDashboardLayout } from './layout.ts'
 import { isPlotDimensions } from './packing.ts'
@@ -32,55 +31,11 @@ export function validateDashboard(value: unknown, properties: readonly PropertyD
   // Older v1 dashboards already store individual widths; preserve their custom layout.
   const layout = source.layout === undefined ? 'custom' : source.layout
   if (!isDashboardLayout(layout)) throw new DashboardValidationError('Invalid dashboard layout.')
-  const propertiesById = new Map(properties.map(p => [p.id, p]))
-  function property(value: unknown, nullable = false): PropertyId | null {
-    if (nullable && value === null) return null
-    if (typeof value !== 'string' || !propertiesById.has(value as PropertyId)) throw new DashboardValidationError(`Unknown chart property: ${String(value)}`)
-    return value as PropertyId
-  }
-  function configuration(value: unknown): ChartConfiguration {
-    const config = record(value)
-    const defaults = createChartConfiguration(properties)
-    function propertyList(value: unknown, fallback: readonly PropertyId[]): PropertyId[] {
-      if (value === undefined) return [...fallback]
-      if (!Array.isArray(value)) throw new DashboardValidationError('Invalid chart property list.')
-      const ids = value.map(id => property(id)!)
-      if (new Set(ids).size !== ids.length) throw new DashboardValidationError('Duplicate chart property.')
-      return ids
-    }
-    const axes = record(config.chartAxes)
-    const camera = record(config.chartCamera)
-    // Existing v1 dashboards predate histogram settings and remain scatterplots.
-    const chartType = config.chartType === undefined ? 'scatterplot' : config.chartType
-    const hideZeroInputs = config.hideZeroInputs === undefined ? false : config.hideZeroInputs
-    if (typeof hideZeroInputs !== 'boolean') throw new DashboardValidationError('Invalid zero-input visibility setting.')
-    const histogramBins = config.histogramBins === undefined ? 'auto' : config.histogramBins
-    if (!isChartType(chartType)) throw new DashboardValidationError('Unknown chart type.')
-    if (!isHistogramBinCount(histogramBins)) throw new DashboardValidationError('Invalid histogram bin count.')
-    const pieGrouping = config.pieGrouping === undefined ? defaults.pieGrouping : config.pieGrouping
-    const pieBins = config.pieBins === undefined ? defaults.pieBins : config.pieBins
-    if (pieGrouping !== 'ranges' && pieGrouping !== 'values') throw new DashboardValidationError('Invalid pie grouping.')
-    if (!isHistogramBinCount(pieBins)) throw new DashboardValidationError('Invalid pie bin count.')
-    if (config.chartMode !== '2d' && config.chartMode !== '3d') throw new DashboardValidationError('Unknown chart type.')
-    if (![camera.yaw, camera.pitch, camera.zoom].every(v => typeof v === 'number' && Number.isFinite(v))) throw new DashboardValidationError('Invalid 3D camera.')
-    if (camera.pan !== undefined && (!Array.isArray(camera.pan) || camera.pan.length !== 2 || !camera.pan.every(v => typeof v === 'number' && Number.isFinite(v)))) {
-      throw new DashboardValidationError('Invalid 3D camera position.')
-    }
-    return {
-      chartType,
-      hideZeroInputs,
-      histogramBins,
-      histogramProperty: property(config.histogramProperty === undefined ? axes.y : config.histogramProperty, true),
-      pieProperty: property(config.pieProperty === undefined ? defaults.pieProperty : config.pieProperty, true),
-      pieGrouping, pieBins,
-      heatmapX: propertyList(config.heatmapX, defaults.heatmapX),
-      heatmapY: propertyList(config.heatmapY, defaults.heatmapY),
-      parallelProperties: propertyList(config.parallelProperties, defaults.parallelProperties),
-      chartMode: config.chartMode,
-      chartAxes: { x: property(axes.x, true), y: property(axes.y, true) },
-      chartZ: property(config.chartZ, true),
-      chartCamera: normalizeCamera({ yaw: camera.yaw as number, pitch: camera.pitch as number, zoom: camera.zoom as number,
-        ...(camera.pan === undefined ? {} : { pan: camera.pan as [number, number] }) }),
+  function configuration(value: unknown) {
+    try { return validateChartConfiguration(value, properties) }
+    catch (error) {
+      if (error instanceof ChartValidationError) throw new DashboardValidationError(error.message)
+      throw error
     }
   }
   if (!Array.isArray(source.widgets)) throw new DashboardValidationError('Invalid dashboard plots.')

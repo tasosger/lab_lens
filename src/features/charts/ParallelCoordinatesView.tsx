@@ -1,5 +1,6 @@
+import { useMemo } from 'react'
 import { ParallelCoordinatesPlot } from '../../charts/ParallelCoordinatesPlot'
-import { formatValue } from '../experiments/format'
+import { formatValue } from '../../format.ts'
 import { buildParallelData, matchingExperiments, selectedProperties } from './analysisData'
 import { ChartTypeSelect } from './ChartTypeSelect'
 import type { ChartViewProps } from './ChartViewProps'
@@ -8,8 +9,8 @@ import './analysisCharts.css'
 
 export function ParallelCoordinatesView({ id, showControls, configuration, onChartAction, experiments, matchingIds, selectedIds,
   properties, isFiltered, onOpen, onResetQuery }: ChartViewProps) {
-  const axes = selectedProperties(properties, configuration.parallelProperties)
-  const data = buildParallelData(matchingExperiments(experiments, matchingIds), axes)
+  const axes = useMemo(() => selectedProperties(properties, configuration.parallelProperties), [properties, configuration.parallelProperties])
+  const data = useMemo(() => buildParallelData(matchingExperiments(experiments, matchingIds), axes), [experiments, matchingIds, axes])
   const selected = new Set(selectedIds)
   return <section id={id} className="parallel-view" aria-label="Parallel coordinates">
     {showControls && <div id={`${id}-controls`} className="chart-controls">

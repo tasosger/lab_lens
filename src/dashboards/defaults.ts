@@ -1,5 +1,5 @@
 import type { PropertyDefinition, PropertyId } from '../data/types.ts'
-import { createChartConfiguration } from '../features/charts/chartConfiguration.ts'
+import { createChartConfiguration } from '../chart-model/configuration.ts'
 import type { Dashboard, DashboardWidget } from './types.ts'
 
 export function createDashboard(id: string, name: string, now: string): Dashboard {

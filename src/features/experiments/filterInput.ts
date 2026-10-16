@@ -1,5 +1,5 @@
 import type { FilterScale, NumericFilter, PropertyId } from '../../data/types.ts'
-import { formatValue } from './format.ts'
+import { formatValue } from '../../format.ts'
 
 export type ThresholdField = 'value' | 'max'
 type FilterInputResult = { condition: NumericFilter } | { error: string; fields: ThresholdField[]; incomplete?: boolean }

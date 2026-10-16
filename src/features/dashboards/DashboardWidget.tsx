@@ -1,11 +1,9 @@
 import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type CSSProperties } from 'react'
-import { ChartHeightContext } from '../../charts/useChartSize'
 import type { ExperimentRepository } from '../../data'
 import type { DashboardWidget as Widget } from '../../dashboards/types'
-import { ExperimentChartView } from '../charts/ExperimentChartView'
-import type { ChartAction } from '../charts/chartConfiguration'
+import { DashboardChart } from './DashboardChart'
 import type { DashboardAction } from './dashboardReducer'
-import { Icon } from '../experiments/Icon'
+import { Icon } from '../../components/Icon'
 
 export function DashboardWidget({ widget, repository, selectedIds, initiallyEditing = false, dragHandleProps, dragging, dropPosition,
   layoutStyle, resizeHandleProps, resizing, onAction, onOpen }: {
@@ -26,12 +24,7 @@ export function DashboardWidget({ widget, repository, selectedIds, initiallyEdit
   const [editing, setEditing] = useState(initiallyEditing)
   const titleInput = useRef<HTMLInputElement>(null)
   useEffect(() => { if (editing) titleInput.current?.focus({ preventScroll: true }) }, [editing])
-  const config = widget.configuration
-  const properties = repository.getProperties()
-  const context = repository.list()
-  const matchingIds = context.items.map(experiment => experiment.id)
   const patch = (patch: Partial<Pick<Widget, 'title' | 'size'>>) => onAction({ type: 'update-widget', id: widget.id, patch })
-  const chart = (action: ChartAction) => onAction({ type: 'chart', id: widget.id, action })
   return (
     <article data-layout-id={widget.id} data-sortable-id={widget.id} data-resizing={resizing}
       style={{ ...layoutStyle, '--dashboard-plot-height': widget.plotHeight ? `${widget.plotHeight}px` : undefined } as CSSProperties}
@@ -60,13 +53,8 @@ export function DashboardWidget({ widget, repository, selectedIds, initiallyEdit
           </div>
         </div>}
       </header>
-      <ChartHeightContext.Provider value={widget.plotHeight}>
-        <ExperimentChartView id={id} showControls={editing}
-        experiments={context.items} matchingIds={matchingIds} selectedIds={selectedIds} properties={properties}
-        configuration={config} onChartAction={chart}
-        isFiltered={false}
-          onResetQuery={() => {}} onOpen={experimentId => onOpen(experimentId, false)} />
-      </ChartHeightContext.Provider>
+      <DashboardChart id={id} widgetId={widget.id} configuration={widget.configuration} plotHeight={widget.plotHeight}
+        editing={editing} repository={repository} selectedIds={selectedIds} onAction={onAction} onOpen={onOpen} />
       <button type="button" className="dashboard-resize-handle" title="Drag to resize plot" {...resizeHandleProps}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m3 13 10-10M8 13l5-5" /></svg>
       </button>

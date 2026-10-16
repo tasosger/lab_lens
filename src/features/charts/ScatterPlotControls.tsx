@@ -1,9 +1,9 @@
 import { PropertySelect } from '../../components/PropertySelect'
 import type { PropertyDefinition, PropertyId } from '../../data'
 import { AxisSwapMenu, type AxisSwap } from './AxisSwapMenu'
-import type { ChartType } from './chartConfiguration'
+import type { ChartType } from '../../chart-model/configuration.ts'
 import { ChartTypeSelect } from './ChartTypeSelect'
-import type { ChartAxes } from './scatterData'
+import type { ChartAxes } from '../../chart-model/scatter.ts'
 
 /** Scatterplots use two properties, one for each axis. */
 export function ScatterPlotControls({ properties, axes, onAxisChange, onSwapAxes, onTypeChange }: {

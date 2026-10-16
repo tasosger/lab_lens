@@ -1,4 +1,4 @@
-import { Icon } from './Icon'
+import { Icon } from '../../components/Icon'
 import type { WorkspaceView } from './workspaceReducer'
 import { useId, useState } from 'react'
 import { DashboardList } from '../dashboards/DashboardList'

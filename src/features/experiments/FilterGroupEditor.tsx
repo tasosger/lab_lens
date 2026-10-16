@@ -3,7 +3,7 @@ import type { Experiment, PropertyDefinition } from '../../data'
 import { useDetailsDropdown } from '../../components/useDetailsDropdown'
 import { FilterBuilder } from './FilterBuilder'
 import { describeFilterExpression, isAppliedGroup, type AppliedFilterGroup } from './filterTree'
-import { Icon } from './Icon'
+import { Icon } from '../../components/Icon'
 import type { FilterEditorAction } from './filterEditorState'
 import './filters.css'
 

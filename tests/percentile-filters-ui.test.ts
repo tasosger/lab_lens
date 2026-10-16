@@ -4,7 +4,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer, type ViteDevServer } from 'vite'
 import { createExperimentRepository } from '../src/data/repository.ts'
-import { createChartConfiguration } from '../src/features/charts/chartConfiguration.ts'
+import { createChartConfiguration } from '../src/chart-model/configuration.ts'
 import { experimentFixture } from './fixtures.ts'
 
 const repository = createExperimentRepository(experimentFixture())

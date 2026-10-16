@@ -16,13 +16,3 @@ export function formatAverage(value: number | undefined): string {
   const formatted = formatValue(value)
   return Number(formatted.replaceAll(',', '')) === value ? formatted : `≈ ${formatted}`
 }
-
-export const operatorLabels = {
-  eq: '=',
-  neq: '≠',
-  gt: '>',
-  gte: '≥',
-  lt: '<',
-  lte: '≤',
-  between: 'between',
-} as const

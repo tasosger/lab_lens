@@ -1,7 +1,7 @@
 import { compareExperiments, type Experiment, type PropertyDefinition } from '../../data'
-import { formatValue } from './format'
+import { formatValue } from '../../format.ts'
 import { compareWithAverage } from './averageComparison'
-import { Icon } from './Icon'
+import { Icon } from '../../components/Icon'
 import './comparison.css'
 
 interface ComparisonViewProps {

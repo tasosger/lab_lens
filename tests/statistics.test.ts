@@ -5,7 +5,7 @@ import { createExperimentRepository } from '../src/data/repository.ts'
 import { buildStatistics } from '../src/data/statistics.ts'
 import type { PropertyDefinition } from '../src/data/types.ts'
 import { averageDeviationStrength, compareWithAverage } from '../src/features/experiments/averageComparison.ts'
-import { formatAverage } from '../src/features/experiments/format.ts'
+import { formatAverage } from '../src/format.ts'
 import { experimentFixture } from './fixtures.ts'
 
 describe('dataset reference averages', () => {

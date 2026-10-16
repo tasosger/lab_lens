@@ -1,9 +1,10 @@
+import { defaultChartAxes } from '../src/chart-model/scatter.ts'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { formatTicks, linearScale, numericDomain, numericTicks } from '../src/charts/numericScale.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
 import { createExperimentRepository } from '../src/data/repository.ts'
-import { buildScatterData, defaultChartAxes } from '../src/features/charts/scatterData.ts'
+import { buildScatterData } from '../src/features/charts/scatterData.ts'
 import { createWorkspaceState, getWorkspaceQuery, workspaceReducer } from '../src/features/experiments/workspaceReducer.ts'
 import { experimentFixture } from './fixtures.ts'
 
@@ -130,28 +131,28 @@ describe('chart workspace integration', () => {
     state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: 'inputs:Additive', operator: 'gt', value: 0 } })
     state = workspaceReducer(state, { type: 'search', value: 'EXP_A' })
     const filtered = repository.list(getWorkspaceQuery(state))
-    const data = buildScatterData(filtered.items, properties.find((property) => property.id === state.chartAxes.x)!, properties.find((property) => property.id === state.chartAxes.y)!)
+    const data = buildScatterData(filtered.items, properties.find((property) => property.id === state.chart.chartAxes.x)!, properties.find((property) => property.id === state.chart.chartAxes.y)!)
     assert.deepEqual(data.points.map((point) => point.id), ['EXP_A'])
     assert.deepEqual(state.selectedIds, ['EXP_C'])
-    const axes = state.chartAxes
+    const axes = state.chart.chartAxes
     state = workspaceReducer(state, { type: 'view', view: 'compare' })
     state = workspaceReducer(state, { type: 'view', view: 'explore' })
     state = workspaceReducer(state, { type: 'view', view: 'charts' })
-    assert.deepEqual(state.chartAxes, axes)
+    assert.deepEqual(state.chart.chartAxes, axes)
     assert.equal(state.search, 'EXP_A')
     state = workspaceReducer(state, { type: 'reset-query' })
     assert.equal(repository.list(getWorkspaceQuery(state)).matched, 5)
-    assert.deepEqual(state.chartAxes, axes)
+    assert.deepEqual(state.chart.chartAxes, axes)
     assert.deepEqual(state.selectedIds, ['EXP_C'])
   })
 
   it('swaps axes without mutating previous state or the table configuration', () => {
     const initial = createWorkspaceState(getExperimentRepository().getProperties())
     const swapped = workspaceReducer(initial, { type: 'swap-chart-axes' })
-    assert.deepEqual(swapped.chartAxes, { x: initial.chartAxes.y, y: initial.chartAxes.x })
-    assert.notDeepEqual(swapped.chartAxes, initial.chartAxes)
+    assert.deepEqual(swapped.chart.chartAxes, { x: initial.chart.chartAxes.y, y: initial.chart.chartAxes.x })
+    assert.notDeepEqual(swapped.chart.chartAxes, initial.chart.chartAxes)
     assert.deepEqual(swapped.visibleColumns, initial.visibleColumns)
     assert.deepEqual(swapped.sort, initial.sort)
-    assert.deepEqual(workspaceReducer(swapped, { type: 'swap-chart-axes' }).chartAxes, initial.chartAxes)
+    assert.deepEqual(workspaceReducer(swapped, { type: 'swap-chart-axes' }).chart.chartAxes, initial.chart.chartAxes)
   })
 })

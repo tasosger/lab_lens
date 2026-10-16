@@ -57,7 +57,7 @@ All five chart types are available in every dashboard plot through **Edit**. **S
 
 For charts using ingredient inputs, **Exclude zero inputs** removes experiments where a chosen ingredient is absent (amount 0). Pie shares and histogram bins recalculate using the remaining experiments. Heatmaps apply the exclusion separately to each cell's property pair. The checkbox is also available directly on dashboard plots and is saved with that plot. Output values, process conditions, and the experiment table are unaffected.
 
-The reusable plotting components, numeric scales, axes, responsive frame, and data table live in `src/charts/`. Experiment-specific defaults and the record-to-point adapter live in `src/features/charts/`. See [chart architecture](doc/charts.md) for the extension points.
+The reusable plotting components, numeric scales, axes, responsive frame, and data table live in `src/charts/`. The shared chart catalog, contracts, defaults, and validation live in `src/chart-model/`; experiment adapters and chart controls live in `src/features/charts/`. See [chart architecture](doc/charts.md) for the extension points.
 
 ## Saved dashboards
 
@@ -70,7 +70,9 @@ Each dashboard plot uses the full dataset with its own optional **Exclude zero i
 - `npm run dev`: start the development server.
 - `npm run build`: type-check the project and create a production build in `dist`.
 - `npm run lint`: run the linter.
-- `npm test`: type-check and run the data and workspace state tests.
+- `npm test`: type-check and run unit, persistence, architecture, static-render, and mounted DOM tests.
+- `npm run test:ui`: run mounted React interaction and rendering-regression tests.
+- `npm run check`: run lint, all tests, and a production build (also used by GitHub Actions).
 - `npm run test:watch`: rerun tests as files change; use `npm test` for type checking.
 - `npm run preview`: preview the production build locally after building it.
 
@@ -111,6 +113,9 @@ References: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), 
 - `src/components/PropertySelect.tsx`: shared grouped property picker.
 - `src/dashboards/`: dashboard models, validation, defaults, storage, and shared queries.
 - `src/features/dashboards/`: dashboard library, editor, chart cards, and draft state.
+- `src/chart-model/`: shared chart catalog, reducer, contracts, and validation.
+- `src/features/experiments/useWorkspaceData.ts`: memoized query results and derived workspace data.
+- `src/format.ts` and `src/components/Icon.tsx`: shared presentation helpers.
 - `src/main.tsx`: React entry point.
 - `src/index.css`: base stylesheet.
 - `vite.config.ts`: Vite configuration.
@@ -189,6 +194,6 @@ The API exposes reads only. It does not write files or persist edits. To change 
 
 ## Test coverage
 
-The suite checks the real dataset's 25 experiments and 24 properties, malformed input, zero versus missing values, each numeric filter operator, nested AND/OR groups, invalid branches, combined queries, numeric sorting and ties, unknown IDs and properties, and protection against data mutation. Workspace tests exercise the same query construction used by the page, covering mixed groups and parentheses, empty drafts, group removal, independent group modes, selection retention, and column and sort resets. No extra test dependencies are required.
+The suite checks the real dataset's 25 experiments and 24 properties, malformed input, zero versus missing values, each numeric filter operator, nested AND/OR groups, invalid branches, combined queries, numeric sorting and ties, unknown IDs and properties, and protection against data mutation. Workspace tests exercise the same query construction used by the page, covering mixed groups and parentheses, empty drafts, group removal, independent group modes, selection retention, and column and sort resets. Mounted tests use jsdom with real React effects and rerenders. They cover toolbar focus, sorting/selection, chart switching, heatmap keyboard navigation, dashboard drag/resize commit and cancellation, and query/render invalidation. Layout measurement and ResizeObserver are controlled test doubles; these tests do not replace visual checks in a browser. Architecture tests guard the core layers against feature/UI dependencies.
 
 Dependencies and configuration follow the official [Vite React TypeScript starter](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts).

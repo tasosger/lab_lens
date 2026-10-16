@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { getPropertyValue, type Experiment, type PropertyDefinition, type PropertyStatistics } from '../../data'
 import { AverageReference } from './AverageReference'
-import { formatValue } from './format'
-import { Icon } from './Icon'
+import { formatValue } from '../../format.ts'
+import { Icon } from '../../components/Icon'
 import { useResizableDrawer } from './useResizableDrawer'
 import { SELECTION_LIMIT } from './workspaceReducer'
 

@@ -7,7 +7,7 @@ import { validateDashboard, DashboardValidationError } from '../src/dashboards/v
 import { createExperimentRepository } from '../src/data/repository.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
 import { buildCorrelationMatrix, buildParallelData, matchingExperiments, propertyData } from '../src/features/charts/analysisData.ts'
-import { createChartConfiguration, reduceChartConfiguration } from '../src/features/charts/chartConfiguration.ts'
+import { createChartConfiguration, reduceChartConfiguration } from '../src/chart-model/configuration.ts'
 import { chartIngredientInputs, excludeChartZeroInputs } from '../src/features/charts/inputPresence.ts'
 import { buildExperimentHistogram } from '../src/features/charts/histogramData.ts'
 import { buildScatterData } from '../src/features/charts/scatterData.ts'
@@ -105,8 +105,8 @@ describe('chart-local zero input exclusion', () => {
     assert.deepEqual(changed.selectedIds, ['A'])
     assert.equal(repo.list(getWorkspaceQuery(changed)).matched, 5)
     assert.deepEqual(repo.getStatistics(), statistics)
-    assert.equal(initial.hideZeroInputs, false)
-    const scatter = reduceChartConfiguration(changed, { type: 'inspect-heatmap-cell', xPropertyId: additive.id, yPropertyId: strength.id })
+    assert.equal(initial.chart.hideZeroInputs, false)
+    const scatter = reduceChartConfiguration(changed.chart, { type: 'inspect-heatmap-cell', xPropertyId: additive.id, yPropertyId: strength.id })
     assert.equal(scatter.hideZeroInputs, true)
     assert.deepEqual(buildScatterData(excludeChartZeroInputs(experiments, scatter, properties), additive, strength).points.map(p => p.id), ['B', 'C', 'D'])
   })

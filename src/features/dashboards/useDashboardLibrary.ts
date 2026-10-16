@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropertyDefinition } from '../../data/types'
 import { createDashboard } from '../../dashboards/defaults'
 import { createLocalDashboardStorage } from '../../dashboards/localStorageAdapter'
@@ -20,7 +20,7 @@ export function useDashboardLibrary(properties: readonly PropertyDefinition[]) {
   const [error, setError] = useState('')
   const [loadAttempt, setLoadAttempt] = useState(0)
   const active = drafts.find(draft => draft.dashboard.id === activeId)
-  const hasUnsavedChanges = drafts.some(draft => dashboardIsDirty(draft.dashboard, saved))
+  const hasUnsavedChanges = useMemo(() => drafts.some(draft => dashboardIsDirty(draft.dashboard, saved)), [drafts, saved])
 
   useEffect(() => {
     try {
@@ -47,10 +47,11 @@ export function useDashboardLibrary(properties: readonly PropertyDefinition[]) {
     setError('')
   }
 
-  function editDashboard(id: string | null, action: DashboardAction) {
+  const editDashboard = useCallback((id: string | null, action: DashboardAction) => {
     setDrafts(previous => previous.map(draft => draft.dashboard.id === id ? dashboardReducer(draft, action) : draft))
     setError('')
-  }
+  }, [])
+  const edit = useCallback((action: DashboardAction) => editDashboard(activeId, action), [activeId, editDashboard])
 
   function save(): boolean {
     if (!active) return false
@@ -77,7 +78,7 @@ export function useDashboardLibrary(properties: readonly PropertyDefinition[]) {
 
   return {
     saved, drafts, active, ready, error, renamingId, save, remove,
-    edit: (action: DashboardAction) => editDashboard(activeId, action),
+    edit,
     rename: (id: string, value: string) => editDashboard(id, { type: 'name', value }),
     beginRename: (id: string) => setRenamingId(id),
     finishRename: (id: string) => setRenamingId(current => current === id ? null : current),

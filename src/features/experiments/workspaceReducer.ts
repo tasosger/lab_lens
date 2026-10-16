@@ -1,12 +1,13 @@
 import type { ExperimentQuery, ExperimentSort, PropertyDefinition, PropertyId } from '../../data/types.ts'
-import { createChartConfiguration, reduceChartConfiguration, type ChartAction, type ChartConfiguration } from '../charts/chartConfiguration.ts'
+import { createChartConfiguration, reduceChartConfiguration, type ChartAction, type ChartConfiguration } from '../../chart-model/configuration.ts'
 import { createFilterEditorState, getFilterEditorTree, reduceFilterEditor, type FilterEditorAction, type FilterEditorState } from './filterEditorState.ts'
 import { toFilterExpression, type AppliedFilterGroup } from './filterTree.ts'
 
 export const SELECTION_LIMIT = 100
 export type WorkspaceView = 'explore' | 'compare' | 'charts' | 'dashboards'
 
-export interface WorkspaceState extends ChartConfiguration, FilterEditorState {
+export interface WorkspaceState extends FilterEditorState {
+  chart: ChartConfiguration
   activeView: WorkspaceView
   search: string
   sort: ExperimentSort
@@ -35,7 +36,7 @@ export type WorkspaceAction =
 export function createWorkspaceState(properties: readonly PropertyDefinition[]): WorkspaceState {
   return {
     activeView: 'explore',
-    ...createChartConfiguration(properties),
+    chart: createChartConfiguration(properties),
     search: '',
     ...createFilterEditorState(),
     sort: { field: 'id', direction: 'asc' },
@@ -47,12 +48,12 @@ export function createWorkspaceState(properties: readonly PropertyDefinition[]):
   }
 }
 
-export function getFilterTree(state: WorkspaceState): AppliedFilterGroup {
+export function getFilterTree(state: Pick<WorkspaceState, 'filters' | 'filterMode'>): AppliedFilterGroup {
   return getFilterEditorTree(state)
 }
 
 /** Keep the UI and its integration tests on the same query-construction path. */
-export function getWorkspaceQuery(state: WorkspaceState): ExperimentQuery {
+export function getWorkspaceQuery(state: Pick<WorkspaceState, 'filters' | 'filterMode' | 'search' | 'sort'>): ExperimentQuery {
   const expression = toFilterExpression(getFilterTree(state))
   return { search: state.search, filters: expression ? [expression] : [], sort: state.sort }
 }
@@ -60,21 +61,6 @@ export function getWorkspaceQuery(state: WorkspaceState): ExperimentQuery {
 export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
     case 'view': return { ...state, activeView: action.view }
-    case 'chart-type':
-    case 'hide-zero-inputs':
-    case 'histogram-property':
-    case 'histogram-bins':
-    case 'pie-property':
-    case 'pie-grouping':
-    case 'pie-bins':
-    case 'heatmap-axis':
-    case 'inspect-heatmap-cell':
-    case 'parallel-properties':
-    case 'chart-mode':
-    case 'chart-z':
-    case 'chart-camera':
-    case 'chart-axis':
-    case 'swap-chart-axes': return reduceChartConfiguration(state, action)
     case 'baseline': return state.selectedIds.includes(action.id)
       ? { ...state, baselineId: action.id }
       : state
@@ -122,5 +108,10 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     }
     case 'clear-selection': return { ...state, selectedIds: [], baselineId: null }
     case 'open-experiment': return { ...state, openExperimentId: action.id }
+    // TypeScript narrows the remaining actions to ChartAction. New charts need no routing here.
+    default: {
+      const chart = reduceChartConfiguration(state.chart, action)
+      return chart === state.chart ? state : { ...state, chart }
+    }
   }
 }
