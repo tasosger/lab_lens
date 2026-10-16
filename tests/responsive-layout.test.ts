@@ -3,16 +3,26 @@ import { describe, it } from 'node:test'
 import { fitChartLabel, heatmapLayout, parallelLayout } from '../src/charts/responsiveLayout.ts'
 
 describe('container-sized dense chart layouts', () => {
-  it('fits every heatmap cell within the width and a bounded plot height', () => {
+  it('uses dashboard height overrides without changing the axes or cell count', () => {
+    for (const height of [240, 520, 900]) {
+      const heatmap = heatmapLayout(800, 24, 24, height)
+      assert.equal(heatmap.viewportHeight, height)
+      assert.ok(heatmap.cellHeight >= 28)
+      assert.ok(heatmap.contentHeight >= height - 1e-8)
+      const parallel = parallelLayout(800, 24, height)
+      assert.equal(parallel.height, height)
+      assert.ok(parallel.bottom > parallel.top)
+    }
+  })
+  it('keeps every heatmap cell selectable inside bounded scrolling viewports', () => {
     for (const width of [240, 320, 480, 800, 1400]) {
-      for (const columns of [1, 2, 12, 24, 48]) {
-        for (const rows of [1, 2, 24, 64]) {
+      for (const columns of [1, 2, 12, 24, 48, 200]) {
+        for (const rows of [1, 2, 24, 64, 200]) {
           const layout = heatmapLayout(width, columns, rows)
-          const usedWidth = width * layout.rowLabelPercent / 100 + columns * layout.cellWidth + layout.gap * (columns + 2)
-          const usedHeight = rows * layout.cellHeight + layout.gap * (rows + 1)
-          assert.ok(usedWidth <= width + 1e-8, `${columns} columns overflow ${width}px`)
-          assert.ok(usedHeight <= 480 + 1e-8, `${rows} rows exceed the height budget`)
-          assert.ok(layout.cellWidth > 0 && layout.cellHeight > 0)
+          const usedWidth = layout.contentWidth * layout.rowLabelPercent / 100 + columns * layout.cellWidth + layout.gap * (columns + 2)
+          assert.ok(Math.abs(usedWidth - layout.contentWidth) < 1e-8)
+          assert.ok(layout.viewportHeight <= 592, `${rows} rows exceed the viewport height budget`)
+          assert.ok(layout.cellWidth >= 28 - 1e-8 && layout.cellHeight >= 28)
           assert.ok(layout.rowLabelStride * layout.cellHeight >= 16)
           assert.ok(layout.columnLabelStride * layout.cellWidth >= 14)
         }
@@ -61,5 +71,14 @@ describe('container-sized dense chart layouts', () => {
     assert.equal(fitChartLabel('Strength', 100), 'Strength')
     assert.equal(fitChartLabel('Long property name', 42), 'Long …')
     assert.equal(fitChartLabel('Strength', 1), '…')
+  })
+
+  it('preserves emoji and combining sequences and accounts for wide glyphs', () => {
+    assert.equal(fitChartLabel('🧪 measurement', 14), '…')
+    assert.equal(fitChartLabel('🧪 measurement', 21), '🧪…')
+    assert.equal(fitChartLabel('e\u0301xy', 14), 'e\u0301…')
+    assert.equal(fitChartLabel('👩‍🔬xyz', 21), '👩‍🔬…')
+    assert.equal(fitChartLabel('測定値', 28), '測…')
+    assert.equal(fitChartLabel('WWWW', 28), 'WW…')
   })
 })

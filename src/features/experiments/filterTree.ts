@@ -79,8 +79,9 @@ export function describeFilterExpression(
       .join(` ${expression.operator.toUpperCase()} `)})`
   }
   const property = properties.find((item) => item.id === expression.propertyId)
+  const formatThreshold = (value: number) => expression.scale === 'percentile' ? `P${value}` : formatValue(value)
   const value = expression.operator === 'between'
-    ? `${formatValue(expression.min)} and ${formatValue(expression.max)}`
-    : formatValue(expression.value)
+    ? `${formatThreshold(expression.min)} and ${formatThreshold(expression.max)}`
+    : formatThreshold(expression.value)
   return `${property?.name ?? expression.propertyId} ${operatorLabels[expression.operator]} ${value}`
 }

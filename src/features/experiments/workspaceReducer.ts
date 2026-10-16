@@ -1,6 +1,4 @@
-import type { ExperimentQuery, ExperimentSort, FilterExpression, PropertyDefinition, PropertyId } from '../../data/types.ts'
-import { isCartesianRange } from '../../charts/rangeSelection.ts'
-import { propertyRangeConditions, type PropertyRangeFilter } from '../charts/propertyRangeFilter.ts'
+import type { ExperimentQuery, ExperimentSort, PropertyDefinition, PropertyId } from '../../data/types.ts'
 import { createChartConfiguration, reduceChartConfiguration, type ChartAction, type ChartConfiguration } from '../charts/chartConfiguration.ts'
 import { createFilterEditorState, getFilterEditorTree, reduceFilterEditor, type FilterEditorAction, type FilterEditorState } from './filterEditorState.ts'
 import { toFilterExpression, type AppliedFilterGroup } from './filterTree.ts'
@@ -10,7 +8,6 @@ export type WorkspaceView = 'explore' | 'compare' | 'charts' | 'dashboards'
 
 export interface WorkspaceState extends ChartConfiguration, FilterEditorState {
   activeView: WorkspaceView
-  plotFilter: PropertyRangeFilter | null
   search: string
   sort: ExperimentSort
   visibleColumns: PropertyId[]
@@ -24,7 +21,6 @@ export type WorkspaceAction =
   | ChartAction
   | FilterEditorAction
   | { type: 'view'; view: WorkspaceView }
-  | { type: 'set-plot-filter'; filter: PropertyRangeFilter | null }
   | { type: 'baseline'; id: string }
   | { type: 'differences-only'; value: boolean }
   | { type: 'search'; value: string }
@@ -40,7 +36,6 @@ export function createWorkspaceState(properties: readonly PropertyDefinition[]):
   return {
     activeView: 'explore',
     ...createChartConfiguration(properties),
-    plotFilter: null,
     search: '',
     ...createFilterEditorState(),
     sort: { field: 'id', direction: 'asc' },
@@ -57,15 +52,9 @@ export function getFilterTree(state: WorkspaceState): AppliedFilterGroup {
 }
 
 /** Keep the UI and its integration tests on the same query-construction path. */
-export function getWorkspaceQuery(state: WorkspaceState, { includePlotFilter = true } = {}): ExperimentQuery {
+export function getWorkspaceQuery(state: WorkspaceState): ExperimentQuery {
   const expression = toFilterExpression(getFilterTree(state))
-  const conditions: FilterExpression[] = [
-    ...(expression ? [expression] : []),
-    ...(includePlotFilter ? propertyRangeConditions(state.plotFilter) : []),
-  ]
-  // Preserve the manual tree's parentheses; plot ranges always narrow it with AND.
-  const filters: FilterExpression[] = conditions.length > 1 ? [{ operator: 'and', filters: conditions }] : conditions
-  return { search: state.search, filters, sort: state.sort }
+  return { search: state.search, filters: expression ? [expression] : [], sort: state.sort }
 }
 
 export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
@@ -86,9 +75,6 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     case 'chart-camera':
     case 'chart-axis':
     case 'swap-chart-axes': return reduceChartConfiguration(state, action)
-    case 'set-plot-filter': return !action.filter || isCartesianRange(action.filter.range)
-      ? { ...state, plotFilter: action.filter }
-      : state
     case 'baseline': return state.selectedIds.includes(action.id)
       ? { ...state, baselineId: action.id }
       : state
@@ -99,8 +85,8 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     case 'update-filter':
     case 'remove-filter':
     case 'filter-mode': return reduceFilterEditor(state, action)
-    case 'clear-filters': return { ...state, filters: [], plotFilter: null }
-    case 'reset-query': return { ...state, search: '', filters: [], plotFilter: null }
+    case 'clear-filters': return { ...state, filters: [] }
+    case 'reset-query': return { ...state, search: '', filters: [] }
     case 'sort': return {
       ...state,
       sort: { field: action.field, direction: state.sort.field === action.field && state.sort.direction === 'asc' ? 'desc' : 'asc' },

@@ -7,7 +7,7 @@ export function createDashboard(id: string, name: string, now: string): Dashboar
 }
 
 export function createDashboardWidget(id: string, properties: readonly PropertyDefinition[]): DashboardWidget {
-  return { id, title: 'New plot', size: 'half', configuration: createChartConfiguration(properties), plotFilter: null }
+  return { id, title: 'New plot', size: 'half', configuration: createChartConfiguration(properties) }
 }
 
 export function createDefaultDashboard(properties: readonly PropertyDefinition[], now: string): Dashboard {

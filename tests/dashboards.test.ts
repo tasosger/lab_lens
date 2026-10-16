@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { createDashboard, createDashboardWidget, createDefaultDashboard } from '../src/dashboards/defaults.ts'
-import { dashboardWidgetQuery } from '../src/dashboards/query.ts'
 import { createDashboardRepository } from '../src/dashboards/repository.ts'
 import type { DashboardStorage } from '../src/dashboards/types.ts'
 import { decodeDashboardStore, DashboardValidationError } from '../src/dashboards/validation.ts'
@@ -40,7 +39,7 @@ describe('saved dashboard repository', () => {
     assert.equal(storage.writes(), 1)
   })
 
-  it('saves and reloads names, layout, order, 3D camera, axes and plot filters', () => {
+  it('saves chart settings and removes legacy filters without changing the input', () => {
     const storage = memoryStorage()
     const repository = createDashboardRepository(storage, properties, () => later)
     const widget = createDashboardWidget('plot-1', properties)
@@ -62,7 +61,8 @@ describe('saved dashboard repository', () => {
     assert.equal(reloaded.widgets[0]!.configuration.chartMode, '3d')
     assert.equal(reloaded.widgets[0]!.size, 'full')
     assert.deepEqual(reloaded.widgets[0]!.configuration.chartCamera, input.widgets[0].configuration.chartCamera)
-    assert.deepEqual(reloaded.widgets[0]!.plotFilter, input.widgets[0].plotFilter)
+    assert.equal('plotFilter' in reloaded.widgets[0]!, false)
+    assert.ok(input.widgets[0].plotFilter)
     assert.equal('search' in reloaded, false)
     assert.equal('filters' in reloaded, false)
     assert.equal(input.name, '  Materials  ')
@@ -112,7 +112,6 @@ describe('saved dashboard repository', () => {
       { ...dashboard, widgets: [{ ...dashboard.widgets[0], configuration: { ...dashboard.widgets[0]!.configuration, chartAxes: { x: 'inputs:Missing', y: 'outputs:Tensile Strength' } } }] },
       { ...dashboard, widgets: [{ ...dashboard.widgets[0], configuration: { ...dashboard.widgets[0]!.configuration, chartCamera: { yaw: 0, pitch: 0, zoom: 1, pan: [0] } } }] },
       { ...dashboard, widgets: [{ ...dashboard.widgets[0], configuration: { ...dashboard.widgets[0]!.configuration, chartCamera: { yaw: 0, pitch: 0, zoom: 1, pan: ['0', 0] } } }] },
-      { ...dashboard, widgets: [{ ...dashboard.widgets[0], plotFilter: { xPropertyId: 'outputs:Viscosity', yPropertyId: 'outputs:Tensile Strength', range: { x: [10, 0], y: [0, 20] } } }] },
     ]
     for (const invalid of cases) {
       assert.throws(() => decodeDashboardStore(JSON.stringify({ version: 1, dashboards: [invalid] }), properties), DashboardValidationError)
@@ -138,7 +137,7 @@ describe('saved dashboard repository', () => {
   })
 })
 
-describe('dashboard editing and independent plot filters', () => {
+describe('dashboard editing and legacy filters', () => {
   const repository = createExperimentRepository(experimentFixture())
   const props = repository.getProperties()
   const base = createDefaultDashboard(props, now)
@@ -164,21 +163,23 @@ describe('dashboard editing and independent plot filters', () => {
     assert.equal(dashboardIsDirty(draft.dashboard, [base]), true)
   })
 
-  it('filters and clears one plot without changing its siblings or the source context', () => {
-    const dashboard = { ...base, widgets: [
-      { ...base.widgets[0]!, plotFilter: { xPropertyId: 'inputs:Additive', yPropertyId: 'outputs:Strength', range: { x: [0, 1], y: [8, 12] } } },
-      { ...base.widgets[1]!, plotFilter: { xPropertyId: 'inputs:Oven Temperature', yPropertyId: 'outputs:Strength', range: { x: [370, 400], y: [0, 12] } } },
-    ] } as const
-    assert.deepEqual(repository.list(dashboardWidgetQuery(dashboard.widgets[0])).items.map(e => e.id), ['EXP_B', 'EXP_C'])
-    assert.deepEqual(repository.list(dashboardWidgetQuery(dashboard.widgets[1])).items.map(e => e.id), ['EXP_C'])
-    assert.equal(repository.list().matched, 5)
-    const cleared = dashboardReducer(createDashboardDraft(dashboard), { type: 'update-widget', id: dashboard.widgets[0].id, patch: { plotFilter: null } })
-    assert.equal(repository.list(dashboardWidgetQuery(cleared.dashboard.widgets[0]!)).matched, 5)
-    assert.deepEqual(repository.list(dashboardWidgetQuery(cleared.dashboard.widgets[1]!)).items.map(e => e.id), ['EXP_C'])
-    assert.equal(cleared.dashboard.widgets[1], dashboard.widgets[1])
-    const removed = dashboardReducer(createDashboardDraft(dashboard), { type: 'remove-widget', id: dashboard.widgets[0].id })
-    assert.deepEqual(repository.list(dashboardWidgetQuery(removed.dashboard.widgets[0]!)).items.map(e => e.id), ['EXP_C'])
-    assert.ok(dashboard.widgets[0].plotFilter)
+  it('ignores old plot ranges on load and omits them on save while preserving chart settings', () => {
+    for (const plotFilter of [null, { xPropertyId: 'inputs:Additive', yPropertyId: 'outputs:Strength', range: { x: [0, 1], y: [8, 12] } },
+      { xPropertyId: 'inputs:Removed', yPropertyId: 'outputs:Removed', range: { x: [10, 0], y: [0, 20] } }, 'invalid legacy range']) {
+      const widget = { ...base.widgets[0]!, configuration: { ...base.widgets[0]!.configuration, hideZeroInputs: true } }
+      const legacy = { ...base, widgets: [{ ...widget, plotFilter }, base.widgets[1]!] }
+      const raw = JSON.stringify({ version: 1, dashboards: [legacy] })
+      const storage = memoryStorage(raw)
+      const library = createDashboardRepository(storage, props, () => now)
+      const loaded = library.list()[0]!
+      assert.deepEqual(loaded.widgets, [widget, base.widgets[1]])
+      assert.equal(storage.read(), raw)
+      assert.equal(storage.writes(), 0)
+      library.save(loaded)
+      assert.doesNotMatch(storage.read()!, /plotFilter/)
+      assert.deepEqual(createDashboardRepository(storage, props).list()[0]!.widgets, loaded.widgets)
+      assert.equal(JSON.stringify({ version: 1, dashboards: [legacy] }), raw)
+    }
   })
 
   it('loads legacy dashboards without applying hidden global filters or search', () => {
@@ -189,7 +190,6 @@ describe('dashboard editing and independent plot filters', () => {
     assert.equal('search' in migrated, false)
     assert.equal('filters' in migrated, false)
     assert.deepEqual(migrated.widgets, legacy.widgets)
-    assert.deepEqual(dashboardWidgetQuery(migrated.widgets[0]!), { filters: [] })
     assert.equal(storage.writes(), 0)
     repository.save(migrated)
     const persisted = JSON.parse(storage.read()!).dashboards[0]

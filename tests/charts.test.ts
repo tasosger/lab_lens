@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { linearScale, numericDomain, numericTicks } from '../src/charts/numericScale.ts'
+import { formatTicks, linearScale, numericDomain, numericTicks } from '../src/charts/numericScale.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
 import { createExperimentRepository } from '../src/data/repository.ts'
 import { buildScatterData, defaultChartAxes } from '../src/features/charts/scatterData.ts'
@@ -101,10 +101,20 @@ describe('shared numeric chart scales', () => {
       assert.ok(domain.every(Number.isFinite))
       assert.ok(domain[0] < domain[1])
       const ticks = numericTicks(domain)
-      assert.equal(ticks.length, 5)
+      assert.ok(ticks.length >= 2 && ticks.length <= 5)
+      assert.equal(new Set(ticks).size, ticks.length)
       assert.ok(ticks.every(Number.isFinite))
       for (const value of values) assert.ok(Number.isFinite(linearScale(domain, [0, 100])(value)))
     }
+  })
+
+  it('distinguishes close tick values in ordinary and scientific notation', () => {
+    for (const values of [[10.00001, 10.00002], [1e100, 1.000000001e100], [1e-100, 1.000000001e-100], [1, 1 + Number.EPSILON]]) {
+      const ticks = numericTicks(numericDomain(values))
+      assert.equal(new Set(formatTicks(ticks)).size, ticks.length)
+    }
+    assert.deepEqual(formatTicks([0, 5, 10]), ['0', '5', '10'])
+    assert.deepEqual(formatTicks([-0, 0]), ['0', '0'])
   })
 })
 

@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { CartesianChart } from './CartesianChart'
+import { ChartTooltip } from './ChartTooltip'
 import { histogramBinLabel, type HistogramBin, type HistogramData } from './histogram'
 
 /** Counts always start at zero; selected records are a subset of each full bar. */
@@ -27,15 +28,13 @@ export function HistogramPlot({ data, label, selectedIds, selectedBin, onSelectB
       description={`${data.count} experiments in ${data.bins.length} bins. Hover or focus a bar for its range and count. Click, Enter, or Space lists its experiments. Dark segments show selected experiments within the total.`}
       xAxis={{ label, domain: data.domain }} yAxis={{ label: 'Experiment count', domain: [0, upper], ticks }}
       overlay={layout => active && (
-        <div id={tooltipId} role="tooltip" className="chart-tooltip" style={{
-          left: Math.max(8, Math.min(layout.xScale(active.lower) + 10, layout.width - 248)),
-          top: Math.max(8, layout.yScale(active.items.length) - 100),
-        }}>
+        <ChartTooltip id={tooltipId} width={layout.width} height={layout.height}
+          x={layout.xScale(active.lower)} y={layout.yScale(active.items.length)}>
           <strong>{histogramBinLabel(active, formatValue)}</strong>
           <dl><div><dt>Experiments</dt><dd>{active.items.length}</dd></div>
             <div><dt>Selected</dt><dd>{selectedCount(active)}</dd></div></dl>
           <span>Open to inspect experiments</span>
-        </div>
+        </ChartTooltip>
       )}>
       {layout => data.bins.map((bin, index) => {
         const x = bin.lower === bin.upper ? layout.left : layout.xScale(bin.lower)

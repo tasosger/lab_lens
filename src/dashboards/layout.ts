@@ -17,5 +17,5 @@ export function templateSize(layout: DashboardLayout, index: number, fallback: D
 
 /** Templates change placement only; all chart content, identities and filters survive. */
 export function applyDashboardTemplate(dashboard: Dashboard, layout: DashboardTemplate): Dashboard {
-  return { ...dashboard, layout, widgets: dashboard.widgets.map((widget, index) => ({ ...widget, size: templateSize(layout, index) })) }
+  return { ...dashboard, layout, widgets: dashboard.widgets.map(({ columns: _columns, ...widget }, index) => ({ ...widget, size: templateSize(layout, index) })) }
 }

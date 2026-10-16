@@ -12,7 +12,7 @@ const experiments = repo.list().items
 const properties = repo.getProperties()
 const noop = () => {}
 const common = { id: 'zero-chart', experiments, properties, matchingIds: experiments.map(item => item.id), selectedIds: [],
-  rangeSelection: null, hasPlotFilter: false, isFiltered: false, onChartAction: noop, onPlotFilter: noop, onOpen: noop, onResetQuery: noop }
+  isFiltered: false, onChartAction: noop, onOpen: noop, onResetQuery: noop }
 const configuration = { ...createChartConfiguration(properties), pieProperty: 'inputs:Additive', pieGrouping: 'values',
   histogramProperty: 'inputs:Additive', chartAxes: { x: 'inputs:Additive', y: 'outputs:Strength' },
   heatmapX: ['outputs:Strength'], heatmapY: ['inputs:Additive'], parallelProperties: ['inputs:Additive', 'outputs:Strength'] }

@@ -1,11 +1,10 @@
 import type { PropertyDefinition, PropertyId } from '../data/types.ts'
 import { normalizeCamera } from '../charts/projection3D.ts'
 import { isHistogramBinCount } from '../charts/histogram.ts'
-import type { CartesianRange } from '../charts/types.ts'
 import { createChartConfiguration, isChartType, type ChartConfiguration } from '../features/charts/chartConfiguration.ts'
-import type { PropertyRangeFilter } from '../features/charts/propertyRangeFilter.ts'
 import type { Dashboard, DashboardStore, DashboardWidget } from './types.ts'
 import { isDashboardLayout } from './layout.ts'
+import { isPlotDimensions } from './packing.ts'
 
 export class DashboardValidationError extends Error {
   constructor(message: string) { super(message); this.name = 'DashboardValidationError' }
@@ -25,17 +24,6 @@ function timestamp(value: unknown): string {
   const result = text(value, 'Timestamp')
   if (!Number.isFinite(Date.parse(result))) throw new DashboardValidationError('Invalid dashboard timestamp.')
   return result
-}
-
-function range(value: unknown): CartesianRange {
-  const source = record(value)
-  const pair = (input: unknown): readonly [number, number] => {
-    if (!Array.isArray(input) || input.length !== 2 || !input.every(v => typeof v === 'number' && Number.isFinite(v)) || input[0] > input[1]) {
-      throw new DashboardValidationError('Invalid plot range.')
-    }
-    return [input[0], input[1]]
-  }
-  return { x: pair(source.x), y: pair(source.y) }
 }
 
 /** Decode only persisted fields; UI objects and derived experiment data never enter storage. */
@@ -95,11 +83,6 @@ export function validateDashboard(value: unknown, properties: readonly PropertyD
         ...(camera.pan === undefined ? {} : { pan: camera.pan as [number, number] }) }),
     }
   }
-  function plotFilter(value: unknown): PropertyRangeFilter | null {
-    if (value === null) return null
-    const filter = record(value)
-    return { xPropertyId: property(filter.xPropertyId)!, yPropertyId: property(filter.yPropertyId)!, range: range(filter.range) }
-  }
   if (!Array.isArray(source.widgets)) throw new DashboardValidationError('Invalid dashboard plots.')
   const ids = new Set<string>()
   const widgets: DashboardWidget[] = source.widgets.map(value => {
@@ -108,9 +91,16 @@ export function validateDashboard(value: unknown, properties: readonly PropertyD
     if (ids.has(id)) throw new DashboardValidationError('Duplicate plot ID.')
     ids.add(id)
     if (widget.size !== 'half' && widget.size !== 'full') throw new DashboardValidationError('Invalid plot size.')
-    return { id, title: text(widget.title, 'Plot title').trim(), size: widget.size, configuration: configuration(widget.configuration), plotFilter: plotFilter(widget.plotFilter) }
+    if ((widget.columns !== undefined || widget.plotHeight !== undefined)
+      && !isPlotDimensions({ columns: widget.columns === undefined ? 6 : widget.columns as number, plotHeight: widget.plotHeight === undefined ? 360 : widget.plotHeight as number })) {
+      throw new DashboardValidationError('Invalid plot dimensions.')
+    }
+    return { id, title: text(widget.title, 'Plot title').trim(), size: widget.size,
+      ...(widget.columns === undefined ? {} : { columns: widget.columns as number }),
+      ...(widget.plotHeight === undefined ? {} : { plotHeight: widget.plotHeight as number }),
+      configuration: configuration(widget.configuration) }
   })
-  // Legacy dashboard-wide search/filters are intentionally ignored. Filters now belong to plots.
+  // Legacy plot ranges and dashboard-wide filters are omitted so they cannot hide experiments.
   return {
     id: text(source.id, 'Dashboard ID'), name: text(source.name, 'Dashboard name').trim(), layout,
     widgets,

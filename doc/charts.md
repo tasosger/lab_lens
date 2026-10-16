@@ -22,20 +22,17 @@ The Charts view offers Scatterplot, Histogram, Pie chart, Correlation heatmap, a
 | `src/features/charts/histogramData.ts` / `HistogramView.tsx` | Matching experiment values, histogram controls, empty states, bin counts, and experiment inspection. |
 | `ExperimentChartView.tsx` / `ChartTypeSelect.tsx` | Shared chart dispatch and chart-type selection for Charts and dashboards. |
 | `AxisSwapMenu.tsx` | X/Y swap control, with outside-click, blur, and Escape dismissal. |
-| `rangeSelection.ts` | Pure rectangle geometry, clipping, drag thresholds, and conversion between pixels and numeric ranges. |
-| `useRangeBrush.ts` / `CartesianBrush.tsx` | Pointer capture, cancellable drag previews, and the reusable SVG selection layer. |
-| `rangeInput.ts` / `CartesianRangeEditor.tsx` | Validated numeric bounds and a keyboard-accessible range form. |
-| `CartesianRangeControls.tsx` | Reusable selection mode and numeric-entry controls for Cartesian plots. |
 | `ChartDataTable.tsx` | Expandable numeric alternative to the plot, including every overlapping point. |
 | `src/components/PropertySelect.tsx` | Reusable picker with input/output optgroups and stable property IDs. |
 | `src/features/charts/scatterData.ts` | Default experiment axes and adaptation of experiment records to generic points. |
 | `ScatterPlotView.tsx` | Experiment controls, empty states, missing-value count, and wiring to shared chart components. |
 | `ScatterPlotControls.tsx` | Shared X/Y property pickers and axis swapping for Charts and dashboard plots. |
 | `chartConfiguration.ts` | Shared chart defaults and setting changes; legacy Z/camera fields remain compatible with saved dashboards. |
-| `propertyRangeFilter.ts` / `PlotRangeFilterControls.tsx` | Bind ranges to property IDs, convert to numeric filters, and edit or clear the active plot filter. |
 | `workspaceReducer.ts` | Active view and axis choices, alongside shared query, selection, and detail state. |
 
 Components in `src/charts/` do not import experiment data or workspace state. Add another Cartesian chart by supplying marks to `CartesianChart`; another scatterplot use case can provide its own point adapter and activation callback. Chart types reuse property controls and the existing filter results without duplicating query logic. Rendering uses SVG or semantic HTML tables without charting dependencies.
+
+Tick labels increase their precision when distinct values would otherwise display identically, and duplicate floating-point tick positions are removed. Axis names are shortened on grapheme boundaries, preserving emoji and combining characters; full names remain in SVG titles. Shared tooltips measure their height and stay within the plot, or flow below it when their content is too tall.
 
 ## Histograms
 
@@ -43,7 +40,7 @@ Choose **Histogram** in **Chart type**, select an input or output, and use **Aut
 
 Each lower bound is inclusive. Upper bounds are exclusive except for the final bin, which includes the maximum. Missing measurements are omitted and reported, and zero is a recorded value. Every recorded measurement belongs to exactly one bin.
 
-Histograms count only the matching experiments, including all active manual filters, search, and plot ranges. They do not include the extra context records used by scatterplot brushing. The dark segment is the selected subset of the total bar. Click a bar or use Enter/Space to inspect its experiment IDs and values; the ID buttons open the existing details drawer. **View bin counts** provides a keyboard-accessible table. Inspecting a bin does not change filters.
+Histograms count only the matching experiments after search, numeric filters, and optional zero-input exclusion. The dark segment is the selected subset of the total bar. Click a bar or use Enter/Space to inspect its experiment IDs and values; the ID buttons open the existing details drawer. **View bin counts** provides a keyboard-accessible table. Inspecting a bin does not change filters.
 
 Chart type, histogram property, and bin count live in the shared chart configuration and persist with saved dashboards. Scatterplot axes and camera settings are retained when switching types. Older v1 dashboard configurations without histogram fields load as scatterplots with automatic bins.
 
@@ -65,6 +62,8 @@ Slices count experiments rather than summing measurements. Shares use the number
 
 X columns and Y rows independently accept any discovered input or output; defaults compare output columns with input rows. Each checklist supports Inputs only, Outputs only, All, and Clear. The matrix scrolls with fixed row and column labels. Cells show Pearson's r to two decimals and the paired finite observation count. Hover text and accessible labels provide three decimals and the unavailable reason. Missing values are excluded pairwise; fewer than three pairs or a constant property produces N/A, not zero.
 
+Cells retain at least 28 pixels in each dimension. Dense matrices scroll inside a bounded viewport, including when a dashboard supplies a plot height; all cells remain available. The matrix has one Tab stop. Arrow keys move between cells, Home/End move across a row, Control+Home/End reach the first/last cell, and Enter opens the scatterplot. Tab exits the matrix.
+
 The diverging color scale remains fixed from −1 (orange) through 0 (neutral) to +1 (blue). Color describes correlation direction, not quality. Clicking a cell opens a 2D scatterplot for that exact X/Y pair while retaining filters and heatmap selections. Returning to the heatmap restores its choices. Correlation summarizes linear association and does not establish causation.
 
 ## Parallel coordinates
@@ -78,7 +77,7 @@ Settings for all chart types are independent in `ChartConfiguration`. Dashboard 
 ## Scatterplots
 
 - Axes accept any discovered input or output, including the same property on both axes. Defaults prefer Oven Temperature and Tensile Strength, with fallbacks for other datasets.
-- Charts and the table share the same query. The scatterplot also keeps points excluded by its own range as faint, hollow context; its data table lists matching points. Comparison membership still comes from the full dataset.
+- Charts and the table share the same search and numeric filters. Scatterplots draw only matching experiments, with optional chart-local zero-input exclusion. Comparison membership still comes from the full dataset.
 - Zero is a coordinate. Missing axis values omit an experiment from the plot and increment the visible omission count.
 - Domains pad the observed range rather than forcing a zero baseline. Empty, constant, negative, and extreme finite ranges remain usable.
 - Original coordinates are preserved: overlapping points are not jittered. Every point is focusable and also appears in the data table.
@@ -90,12 +89,12 @@ Settings for all chart types are independent in `ChartConfiguration`. Dashboard 
 - Swapping X/Y retains property-bound filters and selections.
 - `tests/scatterplot-2d-ui.test.ts` covers standalone controls, saved 3D dashboard rendering, X/Y values, and missing legacy Z values. `tests/chart-zero-inputs.test.ts` verifies that old Z settings do not exclude experiments.
 
-## Filtering from the plot
+## Filtering experiments
 
-Choose **Select range**, then drag a rectangle. Releasing applies inclusive X and Y ranges; small clicks do nothing, and Escape or pointer cancellation discards the preview. **Finish selecting** restores pointer inspection. **Enter numeric bounds** provides the same filtering by keyboard.
+Use **Filters** to combine percentile or absolute-value conditions, including nested AND/OR groups. The chart and its data table use the resulting experiments. **Exclude zero inputs** remains available for the chart's chosen ingredient inputs.
 
-Both ranges combine with the existing filter tree using AND, preserving nested OR groups. A new selection replaces the previous plot range. **Edit plot range** changes exact bounds; **Clear plot range** preserves manual filters and search. Global filter resets clear both.
+Scatterplot range selection, numeric-bound controls, and faded out-of-range context points have been removed. Old dashboard plot ranges are ignored on load and omitted on the next save; other chart settings are preserved.
 
-Axes stay stable while brushing because their domains use results before the plot range. Zero matches still leave context points available for another selection. Ranges remain tied to their original property IDs across axis changes; swapping axes swaps the displayed rectangle. The range survives view changes and resets on refresh.
+Axis domains follow the experiments actually plotted. When no experiments match, the chart shows an empty state with a reset action.
 
-`tests/charts.test.ts` and `tests/chart-filtering.test.ts` cover data adaptation, scales, range conversion, numeric input, and repository/workspace integration. Run `npm test`, `npm run lint`, and `npm run build` from the app directory.
+`tests/charts.test.ts`, `tests/chart-filtering.test.ts`, and `tests/scatterplot-2d-ui.test.ts` cover data adaptation, scales, workspace filtering, and rendering. Dashboard tests cover legacy range cleanup. Run `npm test`, `npm run lint`, and `npm run build` from the app directory.

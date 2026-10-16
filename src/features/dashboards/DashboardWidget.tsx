@@ -1,14 +1,13 @@
-import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes } from 'react'
+import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type CSSProperties } from 'react'
+import { ChartHeightContext } from '../../charts/useChartSize'
 import type { ExperimentRepository } from '../../data'
-import { dashboardWidgetQuery } from '../../dashboards/query'
 import type { DashboardWidget as Widget } from '../../dashboards/types'
 import { ExperimentChartView } from '../charts/ExperimentChartView'
-import { PlotRangeFilterControls } from '../charts/PlotRangeFilterControls'
-import { rangeForAxes } from '../charts/propertyRangeFilter'
 import type { ChartAction } from '../charts/chartConfiguration'
 import type { DashboardAction } from './dashboardReducer'
 
-export function DashboardWidget({ widget, repository, selectedIds, initiallyEditing = false, dragHandleProps, dragging, dropPosition, onAction, onOpen }: {
+export function DashboardWidget({ widget, repository, selectedIds, initiallyEditing = false, dragHandleProps, dragging, dropPosition,
+  layoutStyle, resizeHandleProps, resizing, onAction, onOpen }: {
   widget: Widget
   repository: ExperimentRepository
   selectedIds: readonly string[]
@@ -16,6 +15,9 @@ export function DashboardWidget({ widget, repository, selectedIds, initiallyEdit
   dragHandleProps: ButtonHTMLAttributes<HTMLButtonElement>
   dragging: boolean
   dropPosition?: 'before' | 'after'
+  layoutStyle?: CSSProperties
+  resizeHandleProps: ButtonHTMLAttributes<HTMLButtonElement>
+  resizing: boolean
   onAction: (action: DashboardAction) => void
   onOpen: (id: string, hidden: boolean) => void
 }) {
@@ -26,11 +28,13 @@ export function DashboardWidget({ widget, repository, selectedIds, initiallyEdit
   const config = widget.configuration
   const properties = repository.getProperties()
   const context = repository.list()
-  const matchingIds = repository.list(dashboardWidgetQuery(widget)).items.map(experiment => experiment.id)
-  const patch = (patch: Partial<Pick<Widget, 'title' | 'size' | 'plotFilter'>>) => onAction({ type: 'update-widget', id: widget.id, patch })
+  const matchingIds = context.items.map(experiment => experiment.id)
+  const patch = (patch: Partial<Pick<Widget, 'title' | 'size'>>) => onAction({ type: 'update-widget', id: widget.id, patch })
   const chart = (action: ChartAction) => onAction({ type: 'chart', id: widget.id, action })
   return (
-    <article data-sortable-id={widget.id} className={`dashboard-widget dashboard-widget-${widget.size}${dragging ? ' dashboard-widget-dragging' : ''}${dropPosition ? ` dashboard-drop-${dropPosition}` : ''}`} aria-label={widget.title || 'Untitled plot'}>
+    <article data-layout-id={widget.id} data-sortable-id={widget.id} data-resizing={resizing}
+      style={{ ...layoutStyle, '--dashboard-plot-height': widget.plotHeight ? `${widget.plotHeight}px` : undefined } as CSSProperties}
+      className={`dashboard-widget dashboard-widget-${widget.size}${dragging ? ' dashboard-widget-dragging' : ''}${dropPosition ? ` dashboard-drop-${dropPosition}` : ''}`} aria-label={widget.title || 'Untitled plot'}>
       <header className="dashboard-widget-heading">
         <div className="dashboard-widget-title-row">
           <button type="button" className="dashboard-drag-handle" title="Drag to rearrange; arrow keys also move the plot" {...dragHandleProps}>
@@ -39,7 +43,6 @@ export function DashboardWidget({ widget, repository, selectedIds, initiallyEdit
             </svg>
           </button>
           <h2 className="dashboard-widget-name">{widget.title || 'Untitled plot'}</h2>
-          {widget.plotFilter && <span className="dashboard-plot-filtered">Filtered</span>}
           <button className="button dashboard-edit-button" aria-expanded={editing} aria-controls={editing ? `${id}-settings ${id}-controls` : undefined}
             aria-label={`${editing ? 'Finish editing' : 'Edit'} ${widget.title || 'plot'}`} onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>
         </div>
@@ -48,21 +51,21 @@ export function DashboardWidget({ widget, repository, selectedIds, initiallyEdit
             <input ref={titleInput} value={widget.title} onChange={event => patch({ title: event.target.value })} placeholder="Plot title" />
           </label>
           <div className="dashboard-widget-actions">
-            <label><span className="sr-only">Plot width</span><select value={widget.size} onChange={event => patch({ size: event.target.value as Widget['size'] })}>
-              <option value="half">Half width</option><option value="full">Full width</option>
-            </select></label>
+            {(widget.columns !== undefined || widget.plotHeight !== undefined) && <button className="text-button" onClick={() => onAction({ type: 'reset-widget-size', id: widget.id })}>Reset size</button>}
             <button className="text-button" onClick={() => onAction({ type: 'remove-widget', id: widget.id })}>Remove</button>
           </div>
-          {widget.plotFilter && <PlotRangeFilterControls filter={widget.plotFilter} properties={properties} onChange={plotFilter => patch({ plotFilter })} />}
         </div>}
       </header>
-      <ExperimentChartView id={id} filterTarget="this plot's results" showControls={editing}
+      <ChartHeightContext.Provider value={widget.plotHeight}>
+        <ExperimentChartView id={id} showControls={editing}
         experiments={context.items} matchingIds={matchingIds} selectedIds={selectedIds} properties={properties}
         configuration={config} onChartAction={chart}
-        rangeSelection={rangeForAxes(widget.plotFilter, config.chartAxes)} hasPlotFilter={Boolean(widget.plotFilter)}
-        isFiltered={Boolean(widget.plotFilter)}
-        onPlotFilter={plotFilter => patch({ plotFilter })}
-        onResetQuery={() => patch({ plotFilter: null })} onOpen={experimentId => onOpen(experimentId, !matchingIds.includes(experimentId))} />
+        isFiltered={false}
+          onResetQuery={() => {}} onOpen={experimentId => onOpen(experimentId, false)} />
+      </ChartHeightContext.Provider>
+      <button type="button" className="dashboard-resize-handle" title="Drag to resize plot" {...resizeHandleProps}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m3 13 10-10M8 13l5-5" /></svg>
+      </button>
     </article>
   )
 }

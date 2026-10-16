@@ -1,12 +1,13 @@
 import { useId, useState } from 'react'
-import { formatTick, numericDomain, numericTicks } from './numericScale'
+import { formatTicks, linearScale, numericDomain, numericTicks } from './numericScale'
+import { ChartTooltip } from './ChartTooltip'
 import { create3DProjector, projectUnit3D, type OrbitCamera, type ScatterPoint3D, type Vector3 } from './projection3D'
 import type { ScatterPlotProps } from './ScatterPlot'
 import { useChartSize } from './useChartSize'
 import { useOrbitDrag } from './useOrbitDrag'
 import './charts.css'
 
-interface ScatterPlot3DProps extends Omit<ScatterPlotProps, 'points' | 'rangeSelection' | 'onRangeSelect'> {
+interface ScatterPlot3DProps extends Omit<ScatterPlotProps, 'points'> {
   points: readonly ScatterPoint3D[]
   zLabel: string
   camera: OrbitCamera
@@ -24,7 +25,7 @@ function axisCoordinate(axis: number, value: number): Vector3 {
 }
 
 /** SVG projection of three numeric dimensions, with depth ordering and an orbit camera. */
-export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds = [], matchingIds, camera, onCameraChange, formatValue, onPointActivate }: ScatterPlot3DProps) {
+export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds = [], camera, onCameraChange, formatValue, onPointActivate }: ScatterPlot3DProps) {
   const id = useId()
   const { container, width, height } = useChartSize()
   const { canvas, rotating, handlers } = useOrbitDrag(camera, onCameraChange)
@@ -32,7 +33,6 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const activeId = hoveredId ?? focusedId
   const highlighted = new Set(highlightedIds)
-  const matching = matchingIds ? new Set(matchingIds) : null
   const axes = [
     { label: xLabel, domain: numericDomain(points.map((point) => point.x)) },
     { label: yLabel, domain: numericDomain(points.map((point) => point.y)) },
@@ -47,7 +47,7 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
 
   return (
       <div ref={container} className={`cartesian-chart orbit-chart${rotating ? ' orbit-chart-rotating' : ''}`}>
-        <svg ref={canvas} viewBox={`0 0 ${width} ${height}`} role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} {...handlers}>
+        <svg data-chart-surface style={{ height }} ref={canvas} viewBox={`0 0 ${width} ${height}`} role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} {...handlers}>
           <title id={`${id}-title`}>{`3D scatterplot: ${xLabel}, ${yLabel}, ${zLabel}`}</title>
           <desc id={`${id}-description`}>Drag to rotate and tilt. Scroll or pinch to zoom toward the pointer. Shift-drag to pan. Double-click the background to reset the view. Hover or focus points for values; click or press Enter to open details. The data table includes every matching point.</desc>
           <g aria-hidden="true" className="orbit-grid">
@@ -58,16 +58,19 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
               return <line key={`${a}-${b}`} x1={start.x} y1={start.y} x2={end.x} y2={end.y} />
             })}
             {axes.map((axis, index) => {
+              const ticks = numericTicks(axis.domain, 3)
+              const labels = formatTicks(ticks)
+              const tickScale = linearScale(axis.domain, [-1, 1])
               const end = unit(axisCoordinate(index, 1))
               const label = unit(axisCoordinate(index, 1.2))
               return (
                 <g key={index} className={`orbit-axis orbit-axis-${index}`}>
                   <line x1={origin.x} y1={origin.y} x2={end.x} y2={end.y} />
-                  {numericTicks(axis.domain, 3).map((value, tick) => {
-                    const point = unit(axisCoordinate(index, tick - 1))
+                  {ticks.map((value, tick) => {
+                    const point = unit(axisCoordinate(index, tickScale(value)))
                     // The shared origin only needs one label to avoid three overlapping numbers.
                     if (tick === 0 && index !== 2) return null
-                    return <text key={tick} x={point.x + (index === 2 ? -10 : 0)} y={point.y + (index === 2 ? 4 : 16)} textAnchor={index === 2 ? 'end' : 'middle'}>{formatTick(value)}</text>
+                    return <text key={tick} x={point.x + (index === 2 ? -10 : 0)} y={point.y + (index === 2 ? 4 : 16)} textAnchor={index === 2 ? 'end' : 'middle'}>{labels[tick]}</text>
                   })}
                   <text className="orbit-axis-title" x={label.x} y={label.y - 8} textAnchor="middle">{axisNames[index]}</text>
                 </g>
@@ -76,9 +79,9 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
           </g>
           {projected.map(({ point, position }) => (
             <g key={point.id} transform={`translate(${position.x} ${position.y})`}
-              className={`scatter-point${highlighted.has(point.id) ? ' scatter-point-selected' : ''}${activeId === point.id && !rotating ? ' scatter-point-active' : ''}${matching && !matching.has(point.id) ? ' scatter-point-excluded' : ''}`}
+              className={`scatter-point${highlighted.has(point.id) ? ' scatter-point-selected' : ''}${activeId === point.id && !rotating ? ' scatter-point-active' : ''}`}
               role="button" tabIndex={0}
-              aria-label={`${point.label}. ${highlighted.has(point.id) ? 'Selected. ' : ''}${matching && !matching.has(point.id) ? 'Outside plot range. ' : ''}${xLabel}: ${formatValue(point.x)}. ${yLabel}: ${formatValue(point.y)}. ${zLabel}: ${formatValue(point.z)}. Open details.`}
+              aria-label={`${point.label}. ${highlighted.has(point.id) ? 'Selected. ' : ''}${xLabel}: ${formatValue(point.x)}. ${yLabel}: ${formatValue(point.y)}. ${zLabel}: ${formatValue(point.z)}. Open details.`}
               aria-describedby={!rotating && activeId === point.id ? `${id}-tooltip` : undefined}
               onPointerEnter={() => setHoveredId(point.id)} onPointerLeave={() => setHoveredId(null)}
               onFocus={() => setFocusedId(point.id)} onBlur={() => setFocusedId(null)}
@@ -93,11 +96,11 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
           ))}
         </svg>
         {active && !rotating && (
-          <div id={`${id}-tooltip`} role="tooltip" className="chart-tooltip" style={{ left: Math.max(8, Math.min(active.position.x + 14, width - 248)), top: Math.max(8, active.position.y - 100) }}>
+          <ChartTooltip id={`${id}-tooltip`} width={width} height={height} x={active.position.x} y={active.position.y}>
             <strong>{active.point.label}</strong>
             <dl>{axes.map((axis, index) => <div key={index}><dt>{axisNames[index]} · {axis.label}</dt><dd>{formatValue([active.point.x, active.point.y, active.point.z][index]!)}</dd></div>)}</dl>
             <span>Open for details</span>
-          </div>
+          </ChartTooltip>
         )}
       </div>
   )

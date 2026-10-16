@@ -1,4 +1,5 @@
 import { compareNames, getPropertyValue } from './properties.ts'
+import { percentileValue, sortedPropertyValues } from './percentiles.ts'
 import type {
   Experiment,
   ExperimentQuery,
@@ -17,6 +18,9 @@ export class QueryValidationError extends Error {
 }
 
 function validateFilter(filter: NumericFilter): void {
+  if (filter.scale !== undefined && filter.scale !== 'absolute' && filter.scale !== 'percentile') {
+    throw new QueryValidationError(`Unknown filter scale: ${String(filter.scale)}`)
+  }
   const operator = filter.operator
   switch (operator) {
     case 'eq':
@@ -39,6 +43,12 @@ function validateFilter(filter: NumericFilter): void {
       break
     default:
       throw new QueryValidationError(`Unknown filter operator: ${String(operator)}`)
+  }
+  if (filter.scale === 'percentile') {
+    const bounds = filter.operator === 'between' ? [filter.min, filter.max] : [filter.value]
+    if (bounds.some(value => value < 0 || value > 100)) {
+      throw new QueryValidationError(`Percentiles for ${filter.propertyId} must be between 0 and 100`)
+    }
   }
 }
 
@@ -64,7 +74,11 @@ export function queryExperiments(
   properties: ReadonlyMap<PropertyId, PropertyDefinition>,
   query: ExperimentQuery,
 ): Experiment[] {
+  if (query === null || typeof query !== 'object' || Array.isArray(query)) {
+    throw new QueryValidationError('Query must be an object')
+  }
   const requireProperty = (id: PropertyId): PropertyDefinition => {
+    if (typeof id !== 'string') throw new QueryValidationError('Property ID must be a string')
     const property = properties.get(id)
     if (!property) throw new QueryValidationError(`Unknown property: ${id}`)
     return property
@@ -77,19 +91,28 @@ export function queryExperiments(
   if (!Array.isArray(filters)) {
     throw new QueryValidationError('Filters must be an array')
   }
+  if (sort === null || typeof sort !== 'object' || Array.isArray(sort)) {
+    throw new QueryValidationError('Sort must be an object')
+  }
   if (sort.direction !== 'asc' && sort.direction !== 'desc') {
     throw new QueryValidationError('Sort direction must be asc or desc')
   }
 
-  const compileFilter = (filter: FilterExpression): ((experiment: Experiment) => boolean) => {
-    if (filter === null || typeof filter !== 'object') {
+  const distributions = new Map<PropertyId, readonly number[]>()
+  const ancestors = new Set<FilterExpression>()
+  const compileFilter = (filter: FilterExpression, depth = 0): ((experiment: Experiment) => boolean) => {
+    if (filter === null || typeof filter !== 'object' || Array.isArray(filter)) {
       throw new QueryValidationError('Each filter must be a numeric condition or logical group')
     }
+    if (ancestors.has(filter)) throw new QueryValidationError('Filter groups must not contain cycles')
+    if (depth > 100) throw new QueryValidationError('Filter groups must not exceed 100 nesting levels')
     if (isFilterGroup(filter)) {
       if (!Array.isArray(filter.filters) || filter.filters.length === 0) {
         throw new QueryValidationError(`An ${filter.operator} group requires a non-empty filters array`)
       }
-      const children = filter.filters.map(compileFilter)
+      ancestors.add(filter)
+      const children = filter.filters.map(child => compileFilter(child, depth + 1))
+      ancestors.delete(filter)
       return filter.operator === 'and'
         ? (experiment) => children.every((matches) => matches(experiment))
         : (experiment) => children.some((matches) => matches(experiment))
@@ -97,11 +120,24 @@ export function queryExperiments(
 
     validateFilter(filter)
     const property = requireProperty(filter.propertyId)
+    if (filter.scale === 'percentile') {
+      // Resolve once against the full dataset, before search or any AND/OR conditions.
+      let values = distributions.get(property.id)
+      if (!values) {
+        values = sortedPropertyValues(experiments, property)
+        distributions.set(property.id, values)
+      }
+      if (!values.length) return () => false
+      const resolved: NumericFilter = filter.operator === 'between'
+        ? { ...filter, scale: 'absolute', min: percentileValue(values, filter.min)!, max: percentileValue(values, filter.max)! }
+        : { ...filter, scale: 'absolute', value: percentileValue(values, filter.value)! }
+      return experiment => matchesFilter(getPropertyValue(experiment, property), resolved)
+    }
     return (experiment) => matchesFilter(getPropertyValue(experiment, property), filter)
   }
 
   // Compile every branch before evaluation so short-circuiting cannot hide invalid filters.
-  const conditions = filters.map(compileFilter)
+  const conditions = filters.map(filter => compileFilter(filter))
   const sortProperty = sort.field === 'id' ? undefined : requireProperty(sort.field)
   const normalizedSearch = search.trim().toLowerCase()
   const matches = experiments.filter((experiment) =>

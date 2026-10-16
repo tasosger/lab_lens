@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import {
   getPropertyValue,
   type ExperimentRepository,
@@ -12,10 +12,9 @@ import { useDashboardLibrary } from '../dashboards/useDashboardLibrary'
 import { dashboardIsDirty } from '../dashboards/dashboardReducer'
 import { useUnsavedNavigation } from '../../components/useUnsavedNavigation'
 import { UnsavedDashboardDialog } from '../dashboards/UnsavedDashboardDialog'
-import { PlotRangeFilterControls } from '../charts/PlotRangeFilterControls'
-import { rangeForAxes } from '../charts/propertyRangeFilter'
 import { FilterGroupEditor } from './FilterGroupEditor'
-import { countConditions, describeFilterExpression, toFilterExpression } from './filterTree'
+import { FilterSummary } from './FilterSummary'
+import { countConditions, toFilterExpression } from './filterTree'
 import { formatValue } from './format'
 import { Icon } from './Icon'
 import { WorkspaceSidebar } from './WorkspaceSidebar'
@@ -33,6 +32,7 @@ const viewTargets: Record<WorkspaceView, string> = { explore: 'experiments', com
 
 export function ExperimentWorkspace({ repository }: { repository: ExperimentRepository }) {
   const properties = repository.getProperties()
+  const allExperiments = useMemo(() => repository.list().items, [repository])
   const [state, dispatch] = useReducer(workspaceReducer, properties, createWorkspaceState)
   const dashboardLibrary = useDashboardLibrary(properties)
   const dashboardNavigation = useUnsavedNavigation(
@@ -40,20 +40,17 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
     dashboardLibrary.save,
   )
   const [openControl, setOpenControl] = useState<'filters' | 'columns' | null>(null)
+  const [filterToEdit, setFilterToEdit] = useState<number | undefined>()
   const [dashboardDetailHidden, setDashboardDetailHidden] = useState(false)
   const filterButton = useRef<HTMLButtonElement>(null)
   const columnButton = useRef<HTMLButtonElement>(null)
   const pageHeading = useRef<HTMLHeadingElement>(null)
   const previousView = useRef(state.activeView)
   const filterTree = getFilterTree(state)
-  const filterCount = countConditions(filterTree) + (state.plotFilter ? 2 : 0)
+  const filterCount = countConditions(filterTree)
   const query = getWorkspaceQuery(state)
   const appliedExpression = toFilterExpression(filterTree)
   const results = repository.list(query)
-  // Keep source points and domains stable while changing the plot's own range.
-  const chartContext = state.activeView === 'charts' && state.plotFilter
-    ? repository.list(getWorkspaceQuery(state, { includePlotFilter: false })).items
-    : results.items
   const visibleProperties = properties.filter((property) =>
     state.visibleColumns.includes(property.id),
   )
@@ -216,7 +213,7 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
               className={`button ${openControl === 'filters' ? 'active' : ''}`}
               aria-expanded={openControl === 'filters'}
               aria-controls="filter-panel"
-              onClick={() => setOpenControl(openControl === 'filters' ? null : 'filters')}
+              onClick={() => { setFilterToEdit(undefined); setOpenControl(openControl === 'filters' ? null : 'filters') }}
             >
               <Icon name="filter" />
               Filters
@@ -253,7 +250,7 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
                   <div className="editor-heading">
                     <div>
                       <strong>Filter experiments</strong>
-                      <p>Use groups to combine AND and OR, such as (A OR B) AND C.</p>
+                      <p className="filter-panel-results">{results.matched} of {results.total} experiments match your filters</p>
                     </div>
                     <button
                       className="icon-button"
@@ -263,15 +260,17 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
                       <Icon name="close" />
                     </button>
                   </div>
-                  <FilterGroupEditor group={filterTree} properties={properties} dispatch={dispatch} />
-                  {filterCount > 0 && (
+                  <FilterGroupEditor group={filterTree} properties={properties} experiments={allExperiments} dispatch={dispatch} initialFilterId={filterToEdit} />
+                  <div className="filter-panel-footer">
                     <button
                       className="text-button clear-filters"
+                      disabled={filterCount === 0}
                       onClick={() => dispatch({ type: 'clear-filters' })}
                     >
-                      Clear filters
+                      Clear all
                     </button>
-                  )}
+                    <button type="button" className="button" onClick={closeControl}>Done</button>
+                  </div>
                 </section>
               )}
               {openControl === 'columns' && (
@@ -331,14 +330,12 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
 
           {appliedExpression && openControl !== 'filters' && (
             <div className="applied-filters">
-              <p className="filter-expression" aria-label="Applied filter expression">
-                {describeFilterExpression(appliedExpression, properties)}
-              </p>
+              <FilterSummary group={filterTree} properties={properties} onEdit={id => { setFilterToEdit(id); setOpenControl('filters') }} />
               <button
                 className="text-button"
                 aria-expanded={false}
                 aria-controls="filter-panel"
-                onClick={() => setOpenControl('filters')}
+                onClick={() => { setFilterToEdit(undefined); setOpenControl('filters') }}
               >
                 Edit filters
               </button>
@@ -349,11 +346,6 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
                 Clear filters
               </button>
             </div>
-          )}
-
-          {state.plotFilter && (
-            <PlotRangeFilterControls filter={state.plotFilter} properties={properties}
-              onChange={(filter) => dispatch({ type: 'set-plot-filter', filter })} />
           )}
 
           <div className="results-heading">
@@ -376,11 +368,8 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
 
           {state.activeView === 'charts' && (
             <ExperimentChartView
-              experiments={chartContext}
+              experiments={results.items}
               matchingIds={results.items.map((experiment) => experiment.id)}
-              rangeSelection={rangeForAxes(state.plotFilter, state.chartAxes)}
-              hasPlotFilter={Boolean(state.plotFilter)}
-              onPlotFilter={(filter) => dispatch({ type: 'set-plot-filter', filter })}
               properties={properties}
               configuration={state}
               onChartAction={dispatch}

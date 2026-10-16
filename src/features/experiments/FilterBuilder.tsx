@@ -1,173 +1,95 @@
-import { useId, useState, type FormEvent } from 'react'
-import type { NumericFilter, PropertyDefinition, PropertyId } from '../../data'
-import { Icon } from './Icon'
+import { useId, useMemo, useReducer, useState, type FormEvent } from 'react'
+import { sortedPropertyValues, type Experiment, type FilterScale, type NumericFilter, type PropertyDefinition } from '../../data'
+import { queryExperiments } from '../../data/query'
+import { absoluteRangeWarning, parseFilterInput, type ThresholdField } from './filterInput'
+import { createFilterDraft, reduceFilterDraft } from './filterDraft'
+import { FilterPropertyPicker } from './FilterPropertyPicker'
+import './filters.css'
 
 const operatorOptions: { value: NumericFilter['operator']; label: string }[] = [
-  { value: 'eq', label: 'Equals (=)' },
-  { value: 'neq', label: 'Not equal (≠)' },
-  { value: 'gt', label: 'Greater than (>)' },
-  { value: 'gte', label: 'At least (≥)' },
-  { value: 'lt', label: 'Less than (<)' },
-  { value: 'lte', label: 'At most (≤)' },
-  { value: 'between', label: 'Between (inclusive)' },
+  { value: 'gte', label: 'At least' },
+  { value: 'lte', label: 'At most' },
+  { value: 'between', label: 'Between' },
+  { value: 'gt', label: 'Greater than' },
+  { value: 'lt', label: 'Less than' },
+  { value: 'eq', label: 'Equals' },
+  { value: 'neq', label: 'Not equal to' },
 ]
 
-export function FilterBuilder({
-  properties,
-  initialCondition,
-  onApply,
-  onClose,
-}: {
+export function FilterBuilder({ properties, experiments, initialCondition, onApply, onClose }: {
   properties: readonly PropertyDefinition[]
+  experiments: readonly Experiment[]
   initialCondition?: NumericFilter
   onApply: (condition: NumericFilter) => void
   onClose: () => void
 }) {
-  const [propertyId, setPropertyId] = useState<PropertyId | ''>(initialCondition?.propertyId ?? properties[0]?.id ?? '')
-  const [operator, setOperator] = useState<NumericFilter['operator']>(initialCondition?.operator ?? 'gte')
-  const [value, setValue] = useState(initialCondition
-    ? String(initialCondition.operator === 'between' ? initialCondition.min : initialCondition.value)
-    : '')
-  const [max, setMax] = useState(initialCondition?.operator === 'between' ? String(initialCondition.max) : '')
-  const [error, setError] = useState('')
+  const [draft, dispatch] = useReducer(reduceFilterDraft, undefined, () => createFilterDraft(properties[0]?.id ?? '', initialCondition))
+  const [submitted, setSubmitted] = useState(false)
+  const [touched, setTouched] = useState<Partial<Record<ThresholdField, boolean>>>({})
   const errorId = useId()
+  const warningId = useId()
+  const titleId = useId()
+  const { propertyId, scale, operator } = draft
+  const { value, max } = draft.thresholds
+  const property = properties.find(item => item.id === propertyId)
+  const distribution = useMemo(() => property ? sortedPropertyValues(experiments, property) : [], [experiments, property])
+  const propertiesById = useMemo(() => new Map(properties.map(item => [item.id, item])), [properties])
+  const parsed = parseFilterInput({ propertyId, operator, scale, value, max })
+  const matched = property && 'condition' in parsed ? queryExperiments(experiments, propertiesById, { filters: [parsed.condition] }).length : undefined
+  const validation = 'error' in parsed && (!parsed.incomplete || submitted || parsed.fields.some(field => touched[field])) ? parsed : undefined
+  const warning = 'condition' in parsed ? absoluteRangeWarning(parsed.condition, distribution) : ''
+  const describedBy = validation ? errorId : warning ? warningId : undefined
+  const inputProps = (field: ThresholdField) => ({
+    'aria-invalid': Boolean(validation?.fields.includes(field)),
+    'aria-describedby': describedBy,
+    onBlur: () => setTouched(previous => ({ ...previous, [field]: true })),
+  })
 
   function apply(event: FormEvent) {
     event.preventDefault()
-    if (!propertyId) return
-    const numericValue = Number(value)
-    const numericMax = Number(max)
-    if (!value.trim() || !Number.isFinite(numericValue)) {
-      setError('Enter a valid number.')
-      return
-    }
-    if (
-      operator === 'between'
-      && (!max.trim() || !Number.isFinite(numericMax) || numericMax < numericValue)
-    ) {
-      setError('Enter an upper bound greater than or equal to the lower bound.')
-      return
-    }
-    onApply(
-      operator === 'between'
-        ? { propertyId, operator, min: numericValue, max: numericMax }
-        : { propertyId, operator, value: numericValue },
-    )
+    setSubmitted(true)
+    if ('error' in parsed) return
+    onApply(parsed.condition)
     onClose()
   }
 
-  return (
-    <form
-      className="filter-editor"
-      onSubmit={apply}
-      noValidate
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.preventDefault()
-          event.stopPropagation()
-          onClose()
-        }
-      }}
-    >
-      <div className="editor-heading">
-        <strong>{initialCondition ? 'Edit condition' : 'Add a condition'}</strong>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Close filter editor"
-          onClick={onClose}
-        >
-          <Icon name="close" />
-        </button>
+  return <form className="filter-composer" aria-labelledby={titleId} onSubmit={apply} noValidate onKeyDown={event => {
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose() }
+  }}>
+    <div className="filter-composer-heading">
+      <strong id={titleId}>{initialCondition ? 'Edit filter' : 'Add filter'}</strong>
+    </div>
+    <div className="filter-composer-fields">
+      <FilterPropertyPicker properties={properties} value={propertyId} onChange={id => dispatch({ type: 'property', propertyId: id })} />
+      <label>Condition<select value={operator} onChange={event => dispatch({ type: 'operator', operator: event.target.value as NumericFilter['operator'] })}>
+        {operatorOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select></label>
+      <label className="filter-value-type">Value type<select value={scale} onChange={event => dispatch({ type: 'scale', scale: event.target.value as FilterScale })}>
+        <option value="absolute">Absolute</option><option value="percentile">Percentile</option>
+      </select></label>
+      <div className="filter-thresholds">
+        <label>{operator === 'between' ? 'From value' : 'Value'}
+          <input type="number" step="any" min={scale === 'percentile' ? 0 : undefined} max={scale === 'percentile' ? 100 : undefined}
+            value={value} placeholder="Enter value" {...inputProps('value')}
+            onChange={event => dispatch({ type: 'threshold', field: 'value', value: event.target.value })} />
+        </label>
+        {operator === 'between' && <label>To value
+          <input type="number" step="any" min={scale === 'percentile' ? 0 : undefined} max={scale === 'percentile' ? 100 : undefined}
+            value={max} placeholder="Enter value" {...inputProps('max')}
+            onChange={event => dispatch({ type: 'threshold', field: 'max', value: event.target.value })} />
+        </label>}
       </div>
-      <div className="filter-fields">
-        <label className="property-field">
-          Property
-          <select
-            autoFocus
-            value={propertyId}
-            onChange={(event) => setPropertyId(event.target.value as PropertyId)}
-          >
-            {(['outputs', 'inputs'] as const).map((group) => (
-              <optgroup key={group} label={group === 'outputs' ? 'Outputs' : 'Inputs'}>
-                {properties
-                  .filter((property) => property.group === group)
-                  .map((property) => (
-                    <option key={property.id} value={property.id}>
-                      {property.name}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Condition
-          <select
-            value={operator}
-            onChange={(event) => {
-              setOperator(event.target.value as NumericFilter['operator'])
-              setError('')
-            }}
-          >
-            {operatorOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          {operator === 'between' ? 'Lower bound' : 'Value'}
-          <input
-            type="number"
-            step="any"
-            value={value}
-            placeholder="e.g. 14"
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : undefined}
-            onChange={(event) => {
-              setValue(event.target.value)
-              setError('')
-            }}
-          />
-        </label>
-
-        {operator === 'between' && (
-          <label>
-            Upper bound
-            <input
-              type="number"
-              step="any"
-              value={max}
-              placeholder="e.g. 20"
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? errorId : undefined}
-              onChange={(event) => {
-                setMax(event.target.value)
-                setError('')
-              }}
-            />
-          </label>
-        )}
-
-        <button className="button primary" disabled={!propertyId} type="submit">
-          {initialCondition ? 'Save changes' : 'Apply filter'}
-        </button>
-        {initialCondition && (
-          <button className="button" type="button" onClick={onClose}>
-            Cancel
-          </button>
-        )}
+    </div>
+    {validation && <p className="field-error" id={errorId} role="alert">{validation.error}</p>}
+    {warning && <p className="filter-range-warning" id={warningId} role="status">Warning: {warning}</p>}
+    <div className="filter-composer-footer">
+      <p role="status" aria-live="polite" className={matched === 0 ? 'filter-no-matches' : ''}>
+        {matched === undefined ? 'Enter a threshold to preview matches.' : <><strong>{matched}</strong> of {experiments.length} experiments match this condition</>}
+      </p>
+      <div className="filter-composer-actions">
+        <button className="button" type="button" onClick={onClose}>Cancel</button>
+        <button className="button primary" disabled={!property || 'error' in parsed} type="submit">{initialCondition ? 'Save changes' : 'Add filter'}</button>
       </div>
-
-      {error && (
-        <p className="field-error" id={errorId} role="alert">
-          {error}
-        </p>
-      )}
-    </form>
-  )
+    </div>
+  </form>
 }

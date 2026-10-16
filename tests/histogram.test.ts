@@ -3,7 +3,6 @@ import { describe, it } from 'node:test'
 import { buildHistogram, histogramBinLabel, type HistogramBinCount } from '../src/charts/histogram.ts'
 import { linearScale } from '../src/charts/numericScale.ts'
 import { createDefaultDashboard } from '../src/dashboards/defaults.ts'
-import { dashboardWidgetQuery } from '../src/dashboards/query.ts'
 import { createDashboardRepository } from '../src/dashboards/repository.ts'
 import { decodeDashboardStore, DashboardValidationError } from '../src/dashboards/validation.ts'
 import { getExperimentRepository } from '../src/data/index.ts'
@@ -118,16 +117,15 @@ describe('experiment histograms and filters', () => {
     assert.deepEqual(count(buildExperimentHistogram(repository.list().items, strength, 3)), [1, 1, 2])
   })
 
-  it('counts the actual filtered results instead of the scatterplot context records', () => {
+  it('counts only matching experiments after applying numeric filters and search', () => {
     let state = createWorkspaceState(properties)
     state = workspaceReducer(state, { type: 'chart-type', chartType: 'histogram' })
     state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: 'outputs:Strength', operator: 'gte', value: 0 } })
-    state = workspaceReducer(state, { type: 'set-plot-filter', filter: {
-      xPropertyId: 'inputs:Additive', yPropertyId: 'outputs:Strength', range: { x: [0, 1], y: [8, 12] },
-    } })
-    const context = repository.list(getWorkspaceQuery(state, { includePlotFilter: false })).items
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: 'inputs:Additive', operator: 'between', min: 0, max: 1 } })
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: 'outputs:Strength', operator: 'between', min: 8, max: 12 } })
+    const context = repository.list().items
     const matching = repository.list(getWorkspaceQuery(state)).items.map(item => item.id)
-    assert.equal(context.length, 3)
+    assert.equal(context.length, 5)
     const histogram = buildExperimentHistogram(context, strength, 'auto', matching)
     assert.deepEqual(histogram.bins.flatMap(bin => bin.items).map(item => item.id), ['EXP_B', 'EXP_C'])
     assert.equal(histogram.count, 2)
@@ -168,7 +166,7 @@ describe('histogram chart settings and saved dashboards', () => {
     assert.equal(reduceChartConfiguration(chart, { type: 'histogram-bins', bins: 0 }), chart)
   })
 
-  it('saves and reloads mixed chart types without affecting sibling widgets or plot queries', () => {
+  it('saves and reloads mixed chart types without affecting sibling widgets or scatterplot axes', () => {
     const initial = createDefaultDashboard(properties, now)
     const id = initial.widgets[0]!.id
     let draft = createDashboardDraft(initial)
@@ -177,7 +175,7 @@ describe('histogram chart settings and saved dashboards', () => {
     draft = dashboardReducer(draft, { type: 'chart', id, action: { type: 'histogram-bins', bins: 8 } })
     assert.deepEqual(draft.dashboard.widgets[1], initial.widgets[1])
     assert.equal(initial.widgets[0]!.configuration.chartType, 'scatterplot')
-    assert.deepEqual(dashboardWidgetQuery(draft.dashboard.widgets[0]!), dashboardWidgetQuery(initial.widgets[0]!))
+    assert.deepEqual(draft.dashboard.widgets[0]!.configuration.chartAxes, initial.widgets[0]!.configuration.chartAxes)
     let saved: string | null = null
     const storage = { read: () => saved, write: (value: string) => { saved = value } }
     const library = createDashboardRepository(storage, properties, () => now)

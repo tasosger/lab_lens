@@ -30,7 +30,7 @@ export function CartesianChart({ title, description, xAxis, yAxis, children, ove
 
   return (
     <div className="cartesian-chart" ref={container}>
-      <svg viewBox={`0 0 ${width} ${height}`} role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
+      <svg data-chart-surface style={{ height }} viewBox={`0 0 ${width} ${height}`} role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
         <title id={`${id}-title`}>{title}</title>
         <desc id={`${id}-description`}>{description}</desc>
         <ChartAxis orientation="x" axis={xAxis} layout={layout} />

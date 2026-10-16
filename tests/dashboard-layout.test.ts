@@ -16,12 +16,11 @@ const source = {
   ...initial,
   widgets: [...initial.widgets, { ...createDashboardWidget('third', properties), title: 'Depth',
     configuration: { ...initial.widgets[0]!.configuration, chartMode: '3d' },
-    plotFilter: { xPropertyId: 'outputs:Viscosity', yPropertyId: 'outputs:Tensile Strength', range: { x: [2000, 3000], y: [10, 20] } },
   }],
 } as const
 
 describe('dashboard layout templates', () => {
-  it('changes only placement, retaining plot contents, order, IDs, cameras and filters', () => {
+  it('changes only placement, retaining plot contents, order, IDs, cameras and chart settings', () => {
     const before = structuredClone(source)
     for (const template of DASHBOARD_TEMPLATES) {
       const result = applyDashboardTemplate(source, template.id)
@@ -66,7 +65,6 @@ describe('dashboard layout templates', () => {
     assert.equal(reloaded.widgets[0]!.id, 'third')
     assert.equal(reloaded.widgets[0]!.size, 'half')
     assert.deepEqual(reloaded.widgets[0]!.configuration, source.widgets[2].configuration)
-    assert.deepEqual(reloaded.widgets[0]!.plotFilter, source.widgets[2].plotFilter)
   })
 
   it('preserves older saved dashboards without a template and rejects unknown layouts', () => {

@@ -42,6 +42,8 @@ describe('dashboard UI boundaries', () => {
     const html = renderToStaticMarkup(createElement(DashboardEditor, props))
     assert.equal((html.match(/<article /g) ?? []).length, 2)
     assert.equal((html.match(/class="dashboard-drag-handle"/g) ?? []).length, 2)
+    assert.equal((html.match(/class="dashboard-resize-handle"/g) ?? []).length, 2)
+    assert.deepEqual([...html.matchAll(/data-resize-side="([^"]+)"/g)].map(match => match[1]), ['right', 'left'])
     assert.equal((html.match(/class="button dashboard-edit-button"/g) ?? []).length, 2)
     assert.equal((html.match(/aria-expanded="false"/g) ?? []).length, 2)
     assert.match(html, /Template<select/)
@@ -49,7 +51,7 @@ describe('dashboard UI boundaries', () => {
     assert.match(html, /disabled="">Save dashboard/)
     for (const removed of ['Duplicate', 'Earlier', 'Later', 'New dashboard', 'Delete dashboard', 'Search dashboard', 'Clear all filters',
       'dashboard-filter-panel', 'chart-controls', 'Plot title', 'Plot width', 'Saved in this browser', 'Dashboard name', 'Name your dashboard', 'dashboard-editor-heading']) assert.ok(!html.includes(removed), removed)
-    assert.match(html, /this plot&#x27;s results/)
+    assert.doesNotMatch(html, /Select range|Enter numeric bounds|Drawing a new range/)
     const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1])
     assert.equal(new Set(ids).size, ids.length)
     const dirty = renderToStaticMarkup(createElement(DashboardEditor, { ...props, dirty: true }))
@@ -57,11 +59,24 @@ describe('dashboard UI boundaries', () => {
     assert.doesNotMatch(dirty, /disabled="">Save dashboard/)
   })
 
+  it('places resize handles according to layout instead of plot order', async () => {
+    const { DashboardCanvas } = await server.ssrLoadModule('/src/features/dashboards/DashboardCanvas.tsx')
+    const widgets = [
+      { ...dashboard.widgets[0]!, columns: 12 },
+      dashboard.widgets[1]!,
+      { ...dashboard.widgets[0]!, id: 'third-plot' },
+    ]
+    const html = renderToStaticMarkup(createElement(DashboardCanvas, { dashboard: { ...dashboard, widgets }, repository,
+      selectedIds: [], onAction: noop, onAddPlot: noop, onOpen: noop }))
+    assert.deepEqual([...html.matchAll(/data-resize-side="([^"]+)"/g)].map(match => match[1]), ['right', 'right', 'left'])
+    assert.match(html, /title="Drag to resize plot \(left to widen\)"/)
+  })
+
   it('hides controls for every dashboard chart type while keeping standalone chart controls available', async () => {
     const { ExperimentChartView } = await server.ssrLoadModule('/src/features/charts/ExperimentChartView.tsx')
     const experiments = repository.list().items
     const props = { id: 'test-chart', experiments, matchingIds: experiments.map(item => item.id), selectedIds: [], properties: repository.getProperties(),
-      rangeSelection: null, hasPlotFilter: false, isFiltered: false, onChartAction: noop, onPlotFilter: noop, onOpen: noop, onResetQuery: noop }
+      isFiltered: false, onChartAction: noop, onOpen: noop, onResetQuery: noop }
     for (const chartType of ['scatterplot', 'histogram']) {
       const configuration = { ...dashboard.widgets[0]!.configuration, chartType }
       const hidden = renderToStaticMarkup(createElement(ExperimentChartView, { ...props, configuration, showControls: false }))
@@ -72,6 +87,59 @@ describe('dashboard UI boundaries', () => {
       assert.match(editable, chartType === 'histogram' ? /Bins/ : /X axis/)
       const standalone = renderToStaticMarkup(createElement(ExperimentChartView, { ...props, configuration }))
       assert.match(standalone, /chart-controls/)
+    }
+  })
+
+  it('fits a dragged plot on release and leaves its size unchanged when the drag is cancelled', async () => {
+    const { DashboardCanvas } = await server.ssrLoadModule('/src/features/dashboards/DashboardCanvas.tsx')
+    const large = { ...dashboard.widgets[0]!, id: 'large', columns: 12, plotHeight: 700 }
+    const widgets = [...dashboard.widgets.map(widget => ({ ...widget, plotHeight: 360 })), large]
+    const actions: unknown[] = []
+    let tree: ReturnType<typeof DashboardCanvas>
+    function Harness() {
+      tree = DashboardCanvas({ dashboard: { ...dashboard, widgets }, repository, selectedIds: [], onAction: (action: unknown) => actions.push(action),
+        onAddPlot: noop, onOpen: noop })
+      return tree
+    }
+    renderToStaticMarkup(createElement(Harness))
+    const grid = tree!.props.children.find((child: { props?: { className?: string } } | null) => child?.props?.className === 'dashboard-grid')
+    const bounds = { left: 0, top: 100, right: 1000, bottom: 1500, width: 1000 }
+    const rectangles = [
+      { left: 0, top: 100, right: 490, bottom: 600 }, { left: 510, top: 100, right: 1000, bottom: 600 },
+      { left: 0, top: 620, right: 1000, bottom: 1500 },
+    ]
+    grid.props.ref.current = { getBoundingClientRect: () => bounds,
+      querySelectorAll: () => widgets.map((widget, index) => ({ dataset: { sortableId: widget.id }, getBoundingClientRect: () => rectangles[index] })) }
+    const card = grid.props.children[0].find((child: { props: { widget: { id: string } } }) => child.props.widget.id === large.id)
+    const handle = card.props.dragHandleProps
+    const button = { focus: noop, setPointerCapture: noop, hasPointerCapture: () => true, releasePointerCapture: noop }
+    const event = (x: number, y: number) => ({ button: 0, isPrimary: true, pointerId: 1, clientX: x, clientY: y,
+      currentTarget: button, preventDefault: noop, stopPropagation: noop })
+    handle.onPointerDown(event(20, 650))
+    handle.onPointerMove(event(750, 120))
+    assert.deepEqual(actions, [])
+    handle.onKeyDown({ ...event(750, 120), key: 'Escape' })
+    handle.onPointerUp(event(750, 120))
+    assert.deepEqual(actions, [])
+    handle.onPointerDown(event(20, 650))
+    handle.onPointerMove(event(750, 120))
+    handle.onPointerUp(event(750, 120))
+    assert.deepEqual(actions, [{ type: 'reorder-widget', id: large.id, targetId: widgets[1]!.id, fit: { columns: 6, plotHeight: 360 } }])
+  })
+
+  it('applies a saved plot height to every chart type and exposes a labeled resize handle', async () => {
+    const { DashboardWidget } = await server.ssrLoadModule('/src/features/dashboards/DashboardWidget.tsx')
+    for (const chartType of ['scatterplot', 'histogram', 'pie', 'heatmap', 'parallel']) {
+      const widget = { ...dashboard.widgets[0]!, columns: 8, plotHeight: 520,
+        configuration: { ...dashboard.widgets[0]!.configuration, chartType } }
+      const html = renderToStaticMarkup(createElement(DashboardWidget, { widget, repository, selectedIds: [], dragging: false,
+        resizing: false, dragHandleProps: {}, resizeHandleProps: { 'aria-label': `Resize ${widget.title}` }, onAction: noop, onOpen: noop }))
+      assert.match(html, /--dashboard-plot-height:520px/)
+      assert.ok(html.includes(`aria-label="Resize ${widget.title}"`))
+      assert.match(html, /data-chart-surface/)
+      if (chartType === 'heatmap') assert.match(html, /--heatmap-cell-height:/)
+      else assert.match(html, /style="height:520px/)
+      assert.doesNotMatch(html, /NaN|Infinity/)
     }
   })
 

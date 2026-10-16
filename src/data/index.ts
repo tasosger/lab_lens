@@ -12,6 +12,7 @@ export function getExperimentRepository(): ExperimentRepository {
 
 export { createExperimentRepository } from './repository.ts'
 export { getPropertyValue } from './properties.ts'
+export { percentileValue, sortedPropertyValues } from './percentiles.ts'
 export { compareExperiments, type ComparisonRow, type ComparisonValue, type ExperimentComparison } from './comparison.ts'
 export { QueryValidationError } from './query.ts'
 export { DatasetValidationError } from './validation.ts'
@@ -23,6 +24,7 @@ export type {
   ExperimentSort,
   FilterExpression,
   FilterGroup,
+  FilterScale,
   NumericFilter,
   PropertyDefinition,
   PropertyGroup,

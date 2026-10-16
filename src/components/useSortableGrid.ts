@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react'
+import { closestSortableTarget } from './sortableTarget'
 
 interface DragSession { id: string; pointerId: number; startX: number; startY: number; x: number; y: number; started: boolean; targetId: string | null }
 interface DragPreview { id: string; targetId: string | null; x: number; y: number }
@@ -7,7 +8,9 @@ interface DragPreview { id: string; targetId: string | null; x: number; y: numbe
 export function useSortableGrid<T extends HTMLElement = HTMLDivElement>(
   items: readonly { id: string; title: string }[],
   onMove: (id: string, targetId: string) => void,
-  { itemLabel = 'Plot', scrollContainer }: { itemLabel?: string; scrollContainer?: RefObject<HTMLElement | null> } = {},
+  { itemLabel = 'Plot', scrollContainer, includeGaps = false }: {
+    itemLabel?: string; scrollContainer?: RefObject<HTMLElement | null>; includeGaps?: boolean
+  } = {},
 ) {
   const container = useRef<T>(null)
   const session = useRef<DragSession | null>(null)
@@ -17,6 +20,16 @@ export function useSortableGrid<T extends HTMLElement = HTMLDivElement>(
   const dragging = drag !== null
 
   function targetAt(x: number, y: number): string | null {
+    const grid = container.current
+    if (!grid) return null
+    if (includeGaps) {
+      // Use card geometry rather than hit-testing chart content, overlays, or empty grid cells.
+      const ids = new Set(items.map(item => item.id))
+      const targets = [...grid.querySelectorAll<HTMLElement>(':scope > [data-sortable-id]')]
+        .filter(element => ids.has(element.dataset.sortableId!))
+        .map(element => ({ id: element.dataset.sortableId!, bounds: element.getBoundingClientRect() }))
+      return closestSortableTarget(x, y, grid.getBoundingClientRect(), targets)
+    }
     let element = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-sortable-id]')
     while (element && container.current?.contains(element)) {
       const id = element.dataset.sortableId

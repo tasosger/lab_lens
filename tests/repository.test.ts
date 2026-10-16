@@ -258,6 +258,7 @@ describe('experiment queries', () => {
 
   it('rejects unsupported query values that arrive from untyped callers', () => {
     const invalidQueries = [
+      null, [], 'query', 1, { sort: null }, { sort: [] }, { sort: false },
       { search: 5 },
       { sort: { field: 'id', direction: 'sideways' } },
       { filters: [{ propertyId: 'inputs:Additive', operator: 'contains', value: 1 }] },
@@ -267,6 +268,19 @@ describe('experiment queries', () => {
     for (const query of invalidQueries) {
       assert.throws(() => ids(query as unknown as ExperimentQuery), QueryValidationError)
     }
+  })
+
+  it('rejects cyclic and excessively deep filters, while allowing shared noncyclic branches', () => {
+    const condition: FilterExpression = { propertyId: 'inputs:Additive', operator: 'gte', value: 0 }
+    const cycle: { operator: 'and'; filters: FilterExpression[] } = { operator: 'and', filters: [] }
+    cycle.filters.push(cycle)
+    assert.throws(() => ids({ filters: [cycle] }), error => error instanceof QueryValidationError && /cycles/.test(error.message))
+    let nested: FilterExpression = condition
+    for (let i = 0; i < 2000; i++) nested = { operator: 'and', filters: [nested] }
+    assert.throws(() => ids({ filters: [nested] }), error => error instanceof QueryValidationError && /nesting/.test(error.message))
+    const shared: FilterExpression = { operator: 'or', filters: [condition] }
+    assert.deepEqual(ids({ filters: [shared, shared] }), ids({ filters: [condition] }))
+    assert.deepEqual(ids(), ['EXP_A', 'EXP_B', 'EXP_C', 'EXP_D', 'EXP_E'])
   })
 })
 

@@ -15,7 +15,7 @@ const configuration = { ...createChartConfiguration(properties), pieProperty: 'i
   heatmapX: ['outputs:Strength'], heatmapY: ['inputs:Additive'], parallelProperties: ['inputs:Additive', 'outputs:Strength'] }
 const noop = () => {}
 const common = { id: 'test-analysis', configuration, experiments, matchingIds: experiments.map(item => item.id), properties, selectedIds: ['EXP_C'],
-  rangeSelection: null, hasPlotFilter: false, isFiltered: false, onChartAction: noop, onPlotFilter: noop, onOpen: noop, onResetQuery: noop }
+  isFiltered: false, onChartAction: noop, onOpen: noop, onResetQuery: noop }
 let server: ViteDevServer
 before(async () => { server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false, watch: null },
   optimizeDeps: { noDiscovery: true, include: [] }, appType: 'custom', logLevel: 'error' }) })
@@ -79,7 +79,7 @@ describe('analysis chart rendering and controls', () => {
     assert.doesNotMatch(html, /EXP_D|EXP_E/)
   })
 
-  it('fits all dataset properties without dropping cells or axes or forcing a minimum plot width', async () => {
+  it('retains every cell in a bounded viewport with one Tab stop, and every parallel axis', async () => {
     const { ExperimentChartView } = await server.ssrLoadModule('/src/features/charts/ExperimentChartView.tsx')
     const real = getExperimentRepository()
     const allProperties = real.getProperties()
@@ -90,6 +90,11 @@ describe('analysis chart rendering and controls', () => {
     const heatmap = renderToStaticMarkup(createElement(ExperimentChartView, { ...props,
       configuration: { ...configuration, chartType: 'heatmap', heatmapX: ids, heatmapY: ids } }))
     assert.equal((heatmap.match(/class="correlation-cell"/g) ?? []).length, ids.length ** 2)
+    assert.equal((heatmap.match(/tabindex="0"/g) ?? []).length, 1)
+    assert.equal((heatmap.match(/tabindex="-1"/g) ?? []).length, ids.length ** 2 - 1)
+    assert.match(heatmap, /max-height:592px/)
+    assert.match(heatmap, /Use arrow keys/)
+    assert.match(heatmap, /Tab leaves the matrix/)
     assert.match(heatmap, /data-values="false"/)
     assert.match(heatmap, /Hover over or focus a cell/)
     assert.doesNotMatch(heatmap, /heatmap-scroll|min-width/)

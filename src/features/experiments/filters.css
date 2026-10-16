@@ -1,0 +1,79 @@
+.filter-panel { background: #fafbfe; }
+.filter-panel .editor-heading > div { min-width: 0; }
+.filter-panel .filter-panel-results { color: #425573; font-variant-numeric: tabular-nums; }
+.filter-summary, .filter-summary-group, .filter-summary-item { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.filter-summary { flex: 1 1 250px; }
+.filter-summary-group { padding: 4px 7px; border: 1px solid #dce4f3; border-radius: 8px; }
+.filter-summary-join { color: #7e8ba0; font-size: 11px; }
+.filter-summary-chip { min-height: 30px; padding: 5px 9px; border: 1px solid #dce4f3; border-radius: 6px; background: #f3f6ff; color: #425b8c; font-size: 11px; text-align: left; overflow-wrap: anywhere; }
+.filter-summary-chip:hover { border-color: #a8bce8; background: #eaf0ff; }
+.filter-panel-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.filter-rule-group { min-width: 0; margin: 0; padding: 12px; border: 1px solid #dce3f0; border-left: 3px solid #ccd6ee; border-radius: 10px; background: #fff; }
+.filter-rule-group[data-root='true'] { padding: 0; border: 0; background: transparent; }
+.filter-rule-group legend { padding: 0 5px; color: var(--muted); font-size: 11px; }
+.filter-rule-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.filter-segmented { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid #e0e5ee; border-radius: 8px; background: #eef1f7; }
+.filter-segmented button { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 5px 10px; border: 0; border-radius: 5px; background: transparent; color: #61708a; font-size: 12px; font-weight: 500; }
+.filter-segmented button[aria-pressed='true'] { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 3px #23345118; }
+.filter-segmented button small { color: inherit; opacity: .75; font-size: 10px; }
+.filter-rule-list { display: grid; gap: 0; }
+.filter-rule-item { min-width: 0; }
+.filter-rule-join { display: block; padding: 5px 12px; color: #77839a; font-size: 11px; }
+.filter-rule-row { display: flex; align-items: center; gap: 4px; padding: 2px 7px 2px 2px; border: 1px solid #e1e6ef; border-radius: 9px; background: white; }
+.filter-rule-row[data-editing='true'] { border-color: #a5b8e9; background: #f1f5ff; }
+.filter-rule-edit { display: flex; align-items: center; flex: 1; min-width: 0; gap: 9px; min-height: 40px; padding: 7px 9px; border: 0; border-radius: 6px; background: transparent; color: #3c4d6c; text-align: left; font-size: 13px; overflow-wrap: anywhere; }
+.filter-rule-edit:hover { background: #f3f6fc; }
+.filter-rule-edit > .icon { margin-left: auto; flex-shrink: 0; width: 15px; height: 15px; color: #7183a1; }
+.filter-property-kind { flex-shrink: 0; padding: 3px 6px; color: #78849a; background: #f1f3f8; border-radius: 4px; font-size: 10px; }
+.filter-rule-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+.filter-rule-actions > button[hidden] { display: none; }
+.filter-advanced { position: relative; color: #7b879c; font-size: 12px; }
+.filter-advanced > summary { display: flex; align-items: center; gap: 5px; cursor: pointer; list-style: none; min-height: 30px; }
+.filter-advanced > summary::-webkit-details-marker, .filter-property-picker summary::-webkit-details-marker { display: none; }
+.filter-advanced > summary .icon { width: 11px; height: 11px; transform: rotate(90deg); }
+.filter-advanced > div { position: absolute; left: 0; top: 100%; z-index: 21; width: 245px; max-width: calc(100vw - 80px); padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: white; box-shadow: 0 8px 28px #283a5820; }
+.filter-advanced p { margin: 8px 0 0; font-size: 11px; line-height: 1.6; }
+.filter-composer { min-width: 0; margin-top: 10px; padding: 16px; border: 1px solid #d9e2f3; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px #304b7c05; }
+.filter-rule-group[data-root='true'] > .filter-composer:first-of-type { margin-top: 0; }
+.filter-composer-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+.filter-composer-heading > strong { font-size: 13px; color: #425371; font-weight: 600; }
+.filter-composer-fields { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+.filter-composer-fields > label { flex: 1 1 140px; }
+.filter-composer-fields > .filter-value-type { flex: 0.8 1 115px; }
+.filter-property-picker { flex: 1.6 1 230px; min-width: 0; }
+.filter-composer-fields label, .filter-field-label { display: flex; flex-direction: column; min-width: 0; gap: 6px; color: #6a7890; font-size: 11px; font-weight: 500; }
+.filter-composer-fields input, .filter-composer-fields select { width: 100%; min-width: 0; height: 40px; padding: 8px 10px; border: 1px solid #dbe1ed; border-radius: 7px; background: #fff; color: #34445f; font-size: 13px; font-weight: 400; }
+.filter-composer-fields input[aria-invalid='true'] { border-color: #b55353; }
+.filter-thresholds { flex: 1.2 1 180px; display: flex; gap: 9px; min-width: 0; }
+.filter-thresholds > label { flex: 1; }
+.filter-property-picker > details { position: relative; margin-top: 6px; }
+.filter-property-picker summary { display: flex; justify-content: space-between; align-items: center; min-height: 40px; padding: 8px 10px; border: 1px solid #dbe1ed; border-radius: 7px; background: #fff; color: #34445f; font-size: 13px; cursor: pointer; list-style: none; }
+.filter-property-picker summary > span { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; overflow-wrap: anywhere; }
+.filter-property-picker summary small { color: #7a879b; font-size: 10px; }
+.filter-property-picker summary > .icon { flex-shrink: 0; width: 12px; height: 12px; margin-left: 8px; transform: rotate(90deg); }
+.filter-property-menu { position: absolute; top: calc(100% + 5px); left: 0; z-index: 22; width: max(100%, 260px); max-width: calc(100vw - 80px); padding: 8px; border: 1px solid #dbe1ed; border-radius: 10px; background: #fff; box-shadow: 0 10px 30px #283a5826; }
+.filter-property-search { position: relative; }
+.filter-property-search > .icon { position: absolute; top: 12px; left: 10px; width: 15px; height: 15px; }
+.filter-property-search input { padding-left: 32px; background: #f7f9fc; }
+.filter-property-options { max-height: 240px; overflow-y: auto; margin-top: 5px; }
+.filter-property-options p { margin: 7px 8px 4px; color: #7b889e; font-size: 10px; font-weight: 600; }
+.filter-property-options button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 34px; padding: 7px 9px; border: 0; border-radius: 5px; background: transparent; text-align: left; color: #43536c; font-size: 12px; overflow-wrap: anywhere; }
+.filter-property-options button:hover, .filter-property-options button:focus-visible, .filter-property-options button[aria-pressed='true'] { background: #eef3ff; color: var(--accent-dark); }
+.filter-property-options button .icon { width: 14px; height: 14px; flex-shrink: 0; }
+.filter-property-options .filter-property-empty { padding: 8px; font-weight: 400; font-size: 12px; }
+.filter-range-warning { margin-top: 10px; color: #8e613c; font-size: 12px; line-height: 1.6; }
+.filter-composer-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eef1f6; }
+.filter-composer-footer > p { flex: 1 1 190px; margin: 0; color: #6b7991; font-size: 11px; line-height: 1.6; }
+.filter-composer-footer strong { color: #3e547d; }
+.filter-composer-actions { display: flex; align-items: center; gap: 7px; margin-left: auto; }
+.filter-composer .button { min-height: 34px; padding: 7px 12px; font-size: 12px; }
+.filter-no-matches, .filter-composer-footer > .filter-no-matches { margin-top: 8px; color: #8e613c; font-size: 11px; line-height: 1.6; }
+@media (max-width: 600px) {
+  .filter-composer { padding: 12px; }
+  .filter-composer-fields > .filter-property-picker { flex-basis: 100%; }
+  .filter-composer-fields > label { flex: 1 1 100px; }
+  .filter-thresholds { flex: 1.4 1 140px; }
+  .filter-composer-actions { width: 100%; justify-content: flex-end; }
+  .filter-property-kind { display: none; }
+  .filter-rule-group { padding: 9px; }
+}

@@ -43,6 +43,9 @@ const result = repository.list({
 - Logical groups use `{ operator: 'and' | 'or', filters: [...] }` and may nest. An OR group matches any child; an AND group requires every child. Search must also match.
 - An empty top-level filter array means no numeric restrictions. Explicit logical groups must contain at least one condition. Every branch is validated before matching, even if another branch would decide the result.
 - Sorting accepts `id` or a property ID and `asc`/`desc`. Missing values stay last; property-value ties use ID ascending.
+- Percentile conditions resolve interpolated thresholds against the full dataset, including zeros and excluding missing measurements. Equality compares against that exact threshold: P50 of `[0, 10]` is `5`, so equality matches neither record. Tied values do not guarantee an exact selected percentage.
+- The filter editor has one **Absolute / Percentile** value-type field; switching it preserves entered numbers. Percentiles outside 0–100 show an error and cannot be applied. Absolute values or entire intervals outside the property's recorded range show a nonblocking warning with that range.
+- Malformed query/sort objects, cyclic filter groups, and nesting beyond 100 groups throw `QueryValidationError`. Reusing the same noncyclic group in multiple branches is allowed.
 
 For example, `(Tensile Strength >= 14 OR Cure Time < 3) AND Polymer 1 != 0`:
 

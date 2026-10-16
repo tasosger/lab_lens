@@ -20,7 +20,12 @@ export interface PropertyStatistics {
   readonly count: number
 }
 
-export type NumericFilter =
+export type FilterScale = 'absolute' | 'percentile'
+
+export type NumericFilter = {
+  /** Omitted means absolute. Percentiles use all recorded values in the dataset. */
+  readonly scale?: FilterScale
+} & (
   | {
       readonly propertyId: PropertyId
       readonly operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte'
@@ -32,6 +37,7 @@ export type NumericFilter =
       readonly min: number
       readonly max: number
     }
+)
 
 export interface FilterGroup {
   readonly operator: 'and' | 'or'

@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
+
+export const ChartHeightContext = createContext<number | undefined>(undefined)
 
 export function useChartSize() {
+  const preferredHeight = useContext(ChartHeightContext)
   const container = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(800)
 
@@ -18,5 +21,5 @@ export function useChartSize() {
     return () => observer.disconnect()
   }, [])
 
-  return { container, width, height: Math.min(440, Math.max(300, Math.round(width * 0.55))) }
+  return { container, width, preferredHeight, height: preferredHeight ?? Math.min(440, Math.max(300, Math.round(width * 0.55))) }
 }

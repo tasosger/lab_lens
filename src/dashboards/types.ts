@@ -1,5 +1,4 @@
 import type { ChartConfiguration } from '../features/charts/chartConfiguration.ts'
-import type { PropertyRangeFilter } from '../features/charts/propertyRangeFilter.ts'
 
 export type DashboardTemplate = 'grid' | 'stack' | 'feature'
 export type DashboardLayout = DashboardTemplate | 'custom'
@@ -8,8 +7,9 @@ export interface DashboardWidget {
   readonly id: string
   readonly title: string
   readonly size: 'half' | 'full'
+  readonly columns?: number
+  readonly plotHeight?: number
   readonly configuration: ChartConfiguration
-  readonly plotFilter: PropertyRangeFilter | null
 }
 
 export interface Dashboard {

@@ -185,7 +185,7 @@ describe('3D workspace state', () => {
     let state = createWorkspaceState(getExperimentRepository().getProperties())
     state = workspaceReducer(state, { type: 'chart-mode', mode: '3d' })
     state = workspaceReducer(state, { type: 'toggle-selection', id: 'EXP_A' })
-    state = workspaceReducer(state, { type: 'set-plot-filter', filter: { xPropertyId: state.chartAxes.x!, yPropertyId: state.chartAxes.y!, range: { x: [0, 100], y: [0, 50] } } })
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: state.chartAxes.x!, operator: 'between', min: 0, max: 100 } })
     const before = structuredClone(state)
     for (const pair of ['xy', 'xz', 'yz'] as const) {
       const swapped = workspaceReducer(state, { type: 'swap-chart-axes', pair })
@@ -201,14 +201,14 @@ describe('3D workspace state', () => {
     assert.deepEqual(state, before)
   })
 
-  it('preserves axes, camera, selections and shared plot filters across mode and view switches', () => {
+  it('preserves axes, camera, selections and numeric filters across mode and view switches', () => {
     let state = createWorkspaceState(getExperimentRepository().getProperties())
     assert.equal(state.chartMode, '2d')
     state = workspaceReducer(state, { type: 'chart-mode', mode: '3d' })
     state = workspaceReducer(state, { type: 'chart-z', propertyId: 'outputs:Viscosity' })
     state = workspaceReducer(state, { type: 'chart-camera', camera: { yaw: 80, pitch: 10, zoom: 1.2 } })
     state = workspaceReducer(state, { type: 'toggle-selection', id: 'EXP_A' })
-    state = workspaceReducer(state, { type: 'set-plot-filter', filter: { xPropertyId: state.chartAxes.x!, yPropertyId: state.chartAxes.y!, range: { x: [0, 1000], y: [0, 1000] } } })
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: state.chartAxes.x!, operator: 'between', min: 0, max: 1000 } })
     const query = getWorkspaceQuery(state)
     const axes = state.chartAxes
     state = workspaceReducer(state, { type: 'chart-mode', mode: '2d' })

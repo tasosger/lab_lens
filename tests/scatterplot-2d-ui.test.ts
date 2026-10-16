@@ -17,7 +17,9 @@ const properties = repository.getProperties()
 const experiments = repository.list().items
 const source = createDefaultDashboard(properties, '2026-10-15T12:00:00.000Z')
 const widget = source.widgets[0]!
-const legacy = { ...widget, configuration: { ...widget.configuration, chartType: 'scatterplot', chartMode: '3d',
+const legacy = { ...widget,
+  plotFilter: { xPropertyId: 'inputs:Amount', yPropertyId: 'outputs:Strength', range: { x: [0, 1], y: [0, 2] } },
+  configuration: { ...widget.configuration, chartType: 'scatterplot', chartMode: '3d',
   chartAxes: { x: 'inputs:Amount', y: 'outputs:Strength' }, chartZ: 'inputs:Legacy', hideZeroInputs: true } }
 const saved = decodeDashboardStore(JSON.stringify({ version: 1, dashboards: [{ ...source, widgets: [legacy] }] }), properties).dashboards[0]!.widgets[0]!
 const noop = () => {}
@@ -27,6 +29,7 @@ before(async () => { server = await createServer({ server: { middlewareMode: tru
 after(async () => { await server?.close() })
 
 function assertTwoDimensional(html: string) {
+  assert.doesNotMatch(html, /Select range|Enter numeric bounds|Edit plot range|Clear plot range|chart-brush|scatter-point-excluded|Outside plot range|shown for context/)
   assert.doesNotMatch(html, /3D scatterplot|orbit-chart|Z axis|Add value|Remove Z|Drag to rotate|Shift-drag|Swap X and Z|Swap Y and Z/)
   assert.equal((html.match(/class="scatter-point(?: scatter-point-selected)?"/g) ?? []).length, 2)
   assert.match(html, /2 plotted/)
@@ -43,8 +46,8 @@ describe('two-dimensional scatterplot visuals', () => {
     for (const chartMode of ['2d', '3d']) {
       const html = renderToStaticMarkup(createElement(ExperimentChartView, {
         properties, experiments, matchingIds: experiments.map(item => item.id), selectedIds: ['A'],
-        configuration: { ...saved.configuration, chartMode }, rangeSelection: null, onPlotFilter: noop,
-        hasPlotFilter: false, isFiltered: false, onChartAction: noop, onOpen: noop, onResetQuery: noop,
+        configuration: { ...saved.configuration, chartMode },
+        isFiltered: false, onChartAction: noop, onOpen: noop, onResetQuery: noop,
       }))
       assertTwoDimensional(html)
       assert.match(html, /X axis/)
@@ -53,7 +56,7 @@ describe('two-dimensional scatterplot visuals', () => {
     }
   })
 
-  it('opens saved 3D dashboard charts in 2D both while viewing and editing', async () => {
+  it('opens legacy dashboard charts in 2D without applying saved ranges, while viewing and editing', async () => {
     const { DashboardWidget } = await server.ssrLoadModule('/src/features/dashboards/DashboardWidget.tsx')
     for (const initiallyEditing of [false, true]) {
       const html = renderToStaticMarkup(createElement(DashboardWidget, {
@@ -64,5 +67,19 @@ describe('two-dimensional scatterplot visuals', () => {
     }
     assert.equal(saved.configuration.chartMode, '3d')
     assert.equal(saved.configuration.chartZ, 'inputs:Legacy')
+  })
+
+  it('renders only matching experiments and shows an empty state when filters match none', async () => {
+    const { ExperimentChartView } = await server.ssrLoadModule('/src/features/charts/ExperimentChartView.tsx')
+    const props = { properties, experiments, selectedIds: ['A'], configuration: saved.configuration,
+      isFiltered: true, onChartAction: noop, onOpen: noop, onResetQuery: noop }
+    const html = renderToStaticMarkup(createElement(ExperimentChartView, { ...props, matchingIds: ['B'] }))
+    assert.match(html, /1 plotted/)
+    assert.match(html, /B\. Amount: 2\. Strength: 3\. Open details/)
+    assert.doesNotMatch(html, /A\. Selected\.|scatter-point-excluded|omitted: missing an axis value/)
+    const empty = renderToStaticMarkup(createElement(ExperimentChartView, { ...props, matchingIds: [] }))
+    assert.match(empty, /No matching experiments/)
+    assert.match(empty, /Reset search and filters/)
+    assert.doesNotMatch(empty, /class="scatter-point|No complete pairs to plot/)
   })
 })

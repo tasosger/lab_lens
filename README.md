@@ -45,7 +45,7 @@ Scatterplots display two properties, X and Y. Previously saved 3D charts open in
 
 Hover or focus a point to inspect its values; click or press Enter/Space to open the existing details drawer. Selected experiments have darker, outlined markers. **View chart data** lists every point, including overlapping experiments, with buttons to open their details. Missing axis values are omitted and counted, while zeros remain valid coordinates. Empty results explain how to recover.
 
-Choose **Histogram** under **Chart type** to see the distribution of any input or output. Choose **Auto** bins or a count from 1 to 50. Bars count the current matching experiments; darker segments show the selected subset. Click a bar or a range in **View bin counts** to list its experiments and open their details. Missing measurements are omitted and counted, zeros are included, and identical values form a single bin. Existing search and plot filters still apply. Changing chart types preserves the scatterplot settings.
+Choose **Histogram** under **Chart type** to see the distribution of any input or output. Choose **Auto** bins or a count from 1 to 50. Bars count the current matching experiments; darker segments show the selected subset. Click a bar or a range in **View bin counts** to list its experiments and open their details. Missing measurements are omitted and counted, zeros are included, and identical values form a single bin. Existing search and numeric filters still apply. Changing chart types preserves the scatterplot settings.
 
 Choose **Pie chart** to see the share of matching experiments grouped by a property's exact values or equal-width ranges. Slices count experiments, and missing values are excluded from the percentage denominator and reported separately. Click a slice or legend label to inspect its experiments.
 
@@ -63,7 +63,7 @@ The reusable plotting components, numeric scales, axes, responsive frame, and da
 
 Expand **Dashboards** in the sidebar to select the default **Experiment overview** or another dashboard. Use **+ Add** to create one, and the sidebar delete control to remove one. In the editor, add plots, open **Edit** for plot settings, choose a layout from the **Template** dropdown, and drag plot handles to rearrange them. Templates change placement only. **Save dashboard** preserves the configuration after a refresh.
 
-Each plot's range filters only that plot; dashboard-wide search and filters are unavailable. Source points remain as context for changing the range. Switching dashboards or leaving warns about unsaved changes. Drafts survive navigation within the app, and failed saves keep the editor open. See [dashboard architecture](doc/dashboards.md).
+Each dashboard plot uses the full dataset with its own optional **Exclude zero inputs** setting. Saved ranges from older scatterplots are ignored and removed on the next save. Switching dashboards or leaving warns about unsaved changes. Drafts survive navigation within the app, and failed saves keep the editor open. See [dashboard architecture](doc/dashboards.md).
 
 ## Commands
 

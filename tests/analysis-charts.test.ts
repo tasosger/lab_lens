@@ -139,15 +139,16 @@ describe('parallel coordinates and filtered analysis data', () => {
     assert.deepEqual(propertyData(input, additive), { items: [{ id: 'inf', label: 'inf', value: 0 }], omittedCount: 1 })
   })
 
-  it('applies search, numeric filters, and existing plot ranges before every aggregation', () => {
+  it('applies search and numeric filters before every aggregation', () => {
     let state = createWorkspaceState(properties)
     state = workspaceReducer(state, { type: 'search', value: 'EXP_' })
     state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: strength.id, operator: 'gte', value: 0 } })
-    state = workspaceReducer(state, { type: 'set-plot-filter', filter: { xPropertyId: additive.id, yPropertyId: strength.id, range: { x: [0, 1], y: [8, 12] } } })
-    const context = repo.list(getWorkspaceQuery(state, { includePlotFilter: false })).items
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: additive.id, operator: 'between', min: 0, max: 1 } })
+    state = workspaceReducer(state, { type: 'add-filter', condition: { propertyId: strength.id, operator: 'between', min: 8, max: 12 } })
+    const context = repo.list().items
     const ids = repo.list(getWorkspaceQuery(state)).items.map(item => item.id)
     const matching = matchingExperiments(context, ids)
-    assert.equal(context.length, 3)
+    assert.equal(context.length, 5)
     assert.deepEqual(matching.map(item => item.id), ['EXP_B', 'EXP_C'])
     assert.equal(buildPieData(propertyData(matching, additive).items, 'values', 5).count, 2)
     assert.equal(buildCorrelationMatrix(matching, [strength], [additive])[0]!.cells[0]!.count, 2)

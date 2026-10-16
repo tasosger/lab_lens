@@ -39,10 +39,10 @@ export function linearScale(domain: NumericDomain, range: NumericDomain): Numeri
 
 export function numericTicks(domain: NumericDomain, count = 5): readonly number[] {
   const length = Math.max(2, Math.floor(count))
-  return Array.from({ length }, (_, index) => {
+  return [...new Set(Array.from({ length }, (_, index) => {
     const fraction = index / (length - 1)
     return domain[0] * (1 - fraction) + domain[1] * fraction
-  })
+  }))]
 }
 
 const tickFormatter = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 })
@@ -53,4 +53,20 @@ export function formatTick(value: number): string {
   return magnitude !== 0 && (magnitude >= 100_000 || magnitude < 0.001)
     ? scientificFormatter.format(value)
     : tickFormatter.format(Object.is(value, -0) ? 0 : value)
+}
+
+/** Increase precision together until distinct ticks have distinct labels. */
+export function formatTicks(values: readonly number[]): readonly string[] {
+  const distinct = new Set(values).size
+  let labels = values.map(formatTick)
+  for (let precision = 5; new Set(labels).size < distinct && precision <= 17; precision++) {
+    const normal = new Intl.NumberFormat('en-US', { maximumSignificantDigits: precision })
+    const scientific = new Intl.NumberFormat('en-US', { notation: 'scientific', maximumSignificantDigits: precision })
+    labels = values.map(value => {
+      const magnitude = Math.abs(value)
+      return (magnitude !== 0 && (magnitude >= 100_000 || magnitude < 0.001) ? scientific : normal)
+        .format(Object.is(value, -0) ? 0 : value)
+    })
+  }
+  return labels
 }

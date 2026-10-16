@@ -1,5 +1,5 @@
 .cartesian-chart { position: relative; width: 100%; min-width: 0; }
-.cartesian-chart > svg { display: block; width: 100%; overflow: visible; }
+.cartesian-chart > svg { display: block; width: 100%; overflow: hidden; }
 .chart-axis text { fill: #647187; font-size: 11px; font-variant-numeric: tabular-nums; }
 .chart-axis .chart-axis-label { fill: #46556d; font-size: 12px; font-weight: 600; }
 .histogram-bar { cursor: pointer; outline: none; }
@@ -14,23 +14,11 @@
 .scatter-dot { fill: #6c80d7; fill-opacity: .8; stroke: white; stroke-width: 1.5; }
 .scatter-point-selected .scatter-dot { fill: #354eae; fill-opacity: 1; stroke: #1e326d; stroke-width: 2; }
 .scatter-point-active .scatter-dot, .scatter-point:focus-visible .scatter-dot { fill: #354eae; fill-opacity: 1; stroke: #172d6d; stroke-width: 3; }
-.scatter-point-excluded .scatter-dot { fill: none; stroke: #9ca8c2; stroke-width: 1.5; opacity: .65; }
-.scatter-point-excluded:focus-visible .scatter-dot { stroke: #172d6d; stroke-width: 3; opacity: 1; }
-.chart-brush-hit { fill: transparent; cursor: crosshair; touch-action: none; }
-.chart-brush-selection { fill: #526bc2; fill-opacity: .12; stroke: #526bc2; stroke-width: 1.5; pointer-events: none; }
-.chart-range-tools { padding: 10px 20px 14px; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.chart-range-mode { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
-.chart-range-tools summary, .plot-filter-controls summary { cursor: pointer; color: var(--accent-dark); width: fit-content; }
-.chart-range-form { padding-top: 12px; }
-.chart-range-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
-.chart-range-fields label { display: grid; gap: 5px; min-width: 0; font-size: 12px; color: #46556d; }
-.chart-range-fields input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: inherit; }
-@media (max-width: 480px) { .chart-range-fields { grid-template-columns: 1fr; } }
-.chart-tooltip { position: absolute; z-index: 2; width: 240px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px; background: #fff; box-shadow: 0 8px 24px #14243e1a; pointer-events: none; font-size: 11px; line-height: 1.6; }
+.chart-tooltip { position: absolute; box-sizing: border-box; z-index: 2; max-width: calc(100% - 16px); padding: 13px min(15px, 4%); border: 1px solid var(--border); border-radius: 12px; background: #fff; box-shadow: 0 8px 24px #14243e1a; pointer-events: none; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 .chart-tooltip strong { display: block; margin-bottom: 8px; color: #344463; font-size: 12px; overflow-wrap: anywhere; }
 .chart-tooltip dl > div { display: flex; justify-content: space-between; gap: 12px; }
-.chart-tooltip dt { color: var(--muted); }
-.chart-tooltip dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chart-tooltip dt { min-width: 0; flex: 1; color: var(--muted); }
+.chart-tooltip dd { min-width: 0; flex: 1; margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .chart-tooltip > span { display: block; margin-top: 8px; color: var(--muted); }
 .chart-data { border-top: 1px solid var(--border); }
 .chart-data summary { padding: 17px 24px; color: var(--accent-dark); font-size: 12px; font-weight: 600; cursor: pointer; }
