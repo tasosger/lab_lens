@@ -1,11 +1,9 @@
 import { DEFAULT_ORBIT_CAMERA, normalizeCamera } from '../charts/projection3D.ts'
 import type { PropertyDefinition } from '../data/types.ts'
-import { defaultChartZ } from './scatter.ts'
+import { defaultChartZ } from './defaults.ts'
 import { isHistogramBinCount } from '../charts/histogram.ts'
 import { chartDefinitions } from './registry.ts'
 import type { ChartAction, ChartConfiguration } from './types.ts'
-export type { ChartAction, ChartConfiguration, ChartType } from './types.ts'
-export { isChartType } from './registry.ts'
 
 /** Retain inactive settings so switching chart types never discards the user's choices. */
 export function createChartConfiguration(properties: readonly PropertyDefinition[]): ChartConfiguration {

@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { formatTicks, linearScale, numericTicks } from './numericScale'
 import { fitChartLabel, parallelLayout } from './responsiveLayout'
-import type { NumericDomain } from './types'
+import type { ParallelDimension, ParallelLine } from './types'
 import { useChartSize } from './useChartSize'
-
-export interface ParallelDimension { readonly id: string; readonly label: string; readonly group: string; readonly domain: NumericDomain }
-export interface ParallelLine { readonly id: string; readonly label: string; readonly values: readonly number[] }
+import './charts.css'
 
 export function ParallelCoordinatesPlot({ dimensions, lines, selectedIds, onOpen }: {
   dimensions: readonly ParallelDimension[]
@@ -47,13 +45,13 @@ export function ParallelCoordinatesPlot({ dimensions, lines, selectedIds, onOpen
           <text className="parallel-axis-label" x={x(index)} y={layout.labelY(index)}
             textAnchor={layout.rotateLabels ? 'start' : 'middle'}
             transform={layout.rotateLabels ? `rotate(-90 ${x(index)} ${layout.labelY(index)})` : undefined}
-            tabIndex={0} aria-label={`${dimension.label} (${dimension.group === 'inputs' ? 'Input' : 'Output'}). Axis range ${bounds[0]} to ${bounds[1]}.`}
+            tabIndex={0} aria-label={`${dimension.label} (${dimension.groupLabel}). Axis range ${bounds[0]} to ${bounds[1]}.`}
             onMouseEnter={() => setActiveAxisId(dimension.id)} onMouseLeave={() => setActiveAxisId(null)}
             onFocus={() => setActiveAxisId(dimension.id)} onBlur={() => setActiveAxisId(null)}>
-            <title>{`${dimension.label} (${dimension.group === 'inputs' ? 'Input' : 'Output'})`}</title>
+            <title>{`${dimension.label} (${dimension.groupLabel})`}</title>
             {fitChartLabel(dimension.label, layout.labelWidth)}
           </text>
-          {!layout.rotateLabels && <text className="parallel-axis-group" x={x(index)} y={47} textAnchor="middle">{dimension.group === 'inputs' ? 'Input' : 'Output'}</text>}
+          {!layout.rotateLabels && <text className="parallel-axis-group" x={x(index)} y={47} textAnchor="middle">{dimension.groupLabel}</text>}
           <line x1={x(index)} x2={x(index)} y1={layout.top} y2={layout.bottom} />
           {ticks.map((value, tick) => <g key={tick}>
             <line x1={x(index) - 4} x2={x(index) + 4} y1={scales[index]!(value)} y2={scales[index]!(value)} />
@@ -64,9 +62,9 @@ export function ParallelCoordinatesPlot({ dimensions, lines, selectedIds, onOpen
       </svg>
     </div>
     <div aria-live="polite">{(activeAxis || active) && <div className="parallel-active-details">
-      {activeAxis ? <><strong>{activeAxis.label} ({activeAxis.group === 'inputs' ? 'Input' : 'Output'})</strong> · Axis range {activeAxisRange[0]} to {activeAxisRange[1]}</>
+      {activeAxis ? <><strong>{activeAxis.label} ({activeAxis.groupLabel})</strong> · Axis range {activeAxisRange[0]} to {activeAxisRange[1]}</>
         : active ? <><strong>{active.label}</strong><dl>{dimensions.map((dimension, index) => <div key={dimension.id}>
-        <dt>{dimension.label} ({dimension.group === 'inputs' ? 'Input' : 'Output'})</dt><dd>{active.values[index]}</dd>
+        <dt>{dimension.label} ({dimension.groupLabel})</dt><dd>{active.values[index]}</dd>
       </div>)}</dl></> : null}
     </div>}</div>
   </div>

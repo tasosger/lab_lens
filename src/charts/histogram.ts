@@ -1,20 +1,14 @@
 import { numericDomain } from './numericScale.ts'
-import type { NumericDomain } from './types.ts'
+import type { NumericDatum, NumericDomain } from './types.ts'
 
 export const MAX_HISTOGRAM_BINS = 50
 export type HistogramBinCount = 'auto' | number
-
-export interface HistogramDatum {
-  readonly id: string
-  readonly label: string
-  readonly value: number
-}
 
 export interface HistogramBin {
   readonly lower: number
   readonly upper: number
   readonly includeUpper: boolean
-  readonly items: readonly HistogramDatum[]
+  readonly items: readonly NumericDatum[]
 }
 
 export interface HistogramData {
@@ -29,7 +23,7 @@ export function isHistogramBinCount(value: unknown): value is HistogramBinCount 
 }
 
 /** Equal-width bins: lower inclusive, upper exclusive, except the final upper bound. */
-export function buildHistogram(items: readonly HistogramDatum[], binCount: HistogramBinCount = 'auto'): HistogramData {
+export function buildHistogram(items: readonly NumericDatum[], binCount: HistogramBinCount = 'auto'): HistogramData {
   if (!isHistogramBinCount(binCount)) throw new RangeError(`Choose between 1 and ${MAX_HISTOGRAM_BINS} bins, or auto.`)
   const values = items.filter(item => Number.isFinite(item.value))
   const count = values.length
@@ -57,7 +51,7 @@ export function buildHistogram(items: readonly HistogramDatum[], binCount: Histo
   }
   edges.push(max)
   const bins = edges.slice(0, -1).map((lower, index) => ({
-    lower, upper: edges[index + 1]!, includeUpper: index === edges.length - 2, items: [] as HistogramDatum[],
+    lower, upper: edges[index + 1]!, includeUpper: index === edges.length - 2, items: [] as NumericDatum[],
   }))
   for (const item of values) {
     let low = 0

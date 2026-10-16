@@ -1,15 +1,17 @@
 import { useMemo } from 'react'
-import { buildCorrelationMatrix, matchingExperiments, selectedProperties } from './analysisData'
+import { buildCorrelationMatrix } from './correlationData'
+import { matchingExperiments, propertyDimension, selectedProperties } from './experimentData'
 import { ChartTypeSelect } from './ChartTypeSelect'
 import type { ChartViewProps } from './ChartViewProps'
-import { CorrelationHeatmapPlot } from './CorrelationHeatmapPlot'
+import { CorrelationHeatmapPlot } from '../../charts/CorrelationHeatmapPlot'
 import { PropertyMultiSelect } from './PropertyMultiSelect'
-import './analysisCharts.css'
+import './chartViews.css'
 
 export function CorrelationHeatmapView({ id, showControls, configuration, onChartAction, experiments, matchingIds,
   properties, isFiltered, onResetQuery }: ChartViewProps) {
   const columns = useMemo(() => selectedProperties(properties, configuration.heatmapX), [properties, configuration.heatmapX])
   const rows = useMemo(() => selectedProperties(properties, configuration.heatmapY), [properties, configuration.heatmapY])
+  const dimensions = useMemo(() => columns.map(propertyDimension), [columns])
   const matching = useMemo(() => matchingExperiments(experiments, matchingIds), [experiments, matchingIds])
   const matrix = useMemo(() => buildCorrelationMatrix(matching, columns, rows, configuration.hideZeroInputs),
     [matching, columns, rows, configuration.hideZeroInputs])
@@ -27,7 +29,7 @@ export function CorrelationHeatmapView({ id, showControls, configuration, onChar
       {isFiltered && <button className="button" onClick={onResetQuery}>Reset search and filters</button>}
     </div> : <>
       <div className="chart-summary" role="status"><p><strong>{matching.length} matching experiments · {rows.length} rows × {columns.length} columns</strong></p></div>
-      <CorrelationHeatmapPlot columns={columns} matrix={matrix}
+      <CorrelationHeatmapPlot columns={dimensions} matrix={matrix}
         onInspect={(xPropertyId, yPropertyId) => onChartAction({ type: 'inspect-heatmap-cell', xPropertyId, yPropertyId })} />
       <div className="correlation-legend" aria-label="Color scale: minus one negative correlation, zero, plus one positive correlation">
         <span>−1 · Negative</span><span className="correlation-gradient" /><span>+1 · Positive</span><span className="correlation-na">N/A · Unavailable</span>

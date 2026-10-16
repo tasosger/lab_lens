@@ -1,4 +1,4 @@
-import type { ChartType } from '../../chart-model/configuration.ts'
+import type { ChartType } from '../../chart-model/types.ts'
 import { chartDefinitions, chartTypes, isChartType } from '../../chart-model/registry'
 import '../../components/propertySelect.css'
 

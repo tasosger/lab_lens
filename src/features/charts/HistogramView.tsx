@@ -5,9 +5,9 @@ import { PropertySelect } from '../../components/PropertySelect'
 import type { Experiment, PropertyDefinition, PropertyId } from '../../data'
 import { formatValue } from '../../format.ts'
 import { ChartTypeSelect } from './ChartTypeSelect'
-import type { ChartType } from '../../chart-model/configuration.ts'
+import type { ChartType } from '../../chart-model/types.ts'
 import { buildExperimentHistogram } from './histogramData'
-import './scatterView.css'
+import './chartViews.css'
 
 const binKey = (bin: HistogramBin) => `${bin.lower}:${bin.upper}`
 

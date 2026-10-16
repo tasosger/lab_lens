@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { ParallelCoordinatesPlot } from '../../charts/ParallelCoordinatesPlot'
 import { formatValue } from '../../format.ts'
-import { buildParallelData, matchingExperiments, selectedProperties } from './analysisData'
+import { buildParallelData } from './parallelData'
+import { matchingExperiments, selectedProperties } from './experimentData'
 import { ChartTypeSelect } from './ChartTypeSelect'
 import type { ChartViewProps } from './ChartViewProps'
 import { PropertyMultiSelect } from './PropertyMultiSelect'
-import './analysisCharts.css'
+import './chartViews.css'
 
 export function ParallelCoordinatesView({ id, showControls, configuration, onChartAction, experiments, matchingIds, selectedIds,
   properties, isFiltered, onOpen, onResetQuery }: ChartViewProps) {

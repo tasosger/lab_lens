@@ -40,3 +40,51 @@
 .orbit-axis-2 { color: #8551a0; }
 .orbit-grid .orbit-axis line { stroke: currentColor; stroke-width: 1.8; }
 .orbit-grid .orbit-axis-title { fill: currentColor; font-size: 13px; font-weight: 700; }
+
+.correlation-cell:focus-visible { outline: 3px solid #7b96ee; outline-offset: 2px; }
+.pie-plot { display: block; flex: 1 1 240px; width: 100%; max-width: 360px; }
+.pie-slice { cursor: pointer; outline: none; }
+.pie-slice path { stroke: white; stroke-width: 1.5; }
+.pie-slice:hover path, .pie-slice:focus-visible path, .pie-slice[aria-pressed='true'] path { stroke: #182d55; stroke-width: 3; }
+.pie-slice text { fill: white; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #26364e; stroke-width: 2px; pointer-events: none; }
+.heatmap-fit { min-width: 0; margin: 20px 24px 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.correlation-heatmap { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: var(--heatmap-gap); font-size: 12px; text-align: center; }
+.correlation-heatmap th { position: relative; padding: 0; min-width: 0; background: #fff; color: #46556d; font-weight: 500; }
+.correlation-heatmap thead th { position: sticky; top: 0; z-index: 2; height: 64px; }
+.correlation-heatmap thead th:first-child { overflow-wrap: anywhere; }
+.correlation-heatmap tbody th { position: sticky; left: 0; z-index: 1; text-align: left; }
+.correlation-heatmap thead th:first-child { left: 0; z-index: 3; }
+.correlation-cell { scroll-margin: 116px 4px 4px 148px; }
+.heatmap-row-label { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); padding-right: 8px; }
+.heatmap-column-label { padding: 0 4px; }
+.heatmap-row-label span, .heatmap-column-label span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 16px; }
+.correlation-heatmap th small { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 12px; }
+.heatmap-fit[data-rotated='true'] thead th { height: 112px; }
+.heatmap-fit[data-rotated='true'] .heatmap-column-label { position: absolute; left: 50%; bottom: 0; width: 104px; padding: 0; transform: rotate(-90deg); transform-origin: left center; text-align: left; }
+.heatmap-fit[data-rotated='true'] .heatmap-column-label small { display: none; }
+.correlation-heatmap td { padding: 0; }
+.correlation-cell { display: grid; align-content: center; gap: 5px; width: 100%; min-width: 0; height: var(--heatmap-cell-height); padding: 0; border: 0; border-radius: 3px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.correlation-cell:hover { box-shadow: inset 0 0 0 2px #172d6d; }
+.correlation-cell strong { font-size: 12px; line-height: 16px; }
+.correlation-cell span { font-size: 10px; line-height: 12px; }
+.heatmap-fit[data-values='false'] .correlation-cell strong, .heatmap-fit[data-counts='false'] .correlation-cell span { display: none; }
+.heatmap-active-details { min-height: 40px; margin: 12px 24px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-muted); color: #46556d; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.parallel-fit { min-width: 0; padding-top: 14px; }
+.parallel-fit svg { display: block; width: 100%; }
+.parallel-line { cursor: pointer; outline: none; }
+.parallel-line-visible { fill: none; stroke: #6c80d7; stroke-width: 1.7; opacity: .45; }
+.parallel-line.is-selected .parallel-line-visible { stroke: #354eae; stroke-width: 3; opacity: .9; }
+.parallel-line-hit { fill: none; stroke: transparent; stroke-width: 12; }
+.parallel-line-active, .parallel-line:focus-visible .parallel-line-visible { fill: none; stroke: #a34a12; stroke-width: 3; opacity: 1; pointer-events: none; }
+.parallel-axis { pointer-events: none; }
+.parallel-axis line { stroke: #a7b3c7; stroke-width: 1; }
+.parallel-axis text { fill: #526179; font-size: 10px; paint-order: stroke; stroke: white; stroke-width: 3px; stroke-linejoin: round; }
+.parallel-axis .parallel-axis-label { font-size: 12px; font-weight: 600; pointer-events: auto; cursor: help; }
+.parallel-axis .parallel-axis-group { fill: #647187; }
+.parallel-active-details { min-height: 40px; margin: 0 24px; padding: 10px 12px; border-radius: 6px; background: var(--surface-muted); font-size: 12px; color: #46556d; overflow-wrap: anywhere; }
+.parallel-active-details dl { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 8px; }
+.parallel-active-details dl > div { display: flex; flex-wrap: wrap; min-width: 0; gap: 8px; }
+.parallel-active-details dd { margin: 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  .heatmap-fit, .heatmap-active-details, .parallel-active-details { margin-left: 12px; margin-right: 12px; }
+}

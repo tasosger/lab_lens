@@ -1,10 +1,10 @@
 import { useState, type CSSProperties } from 'react'
-import { correlationDescription } from '../../charts/correlation'
-import { heatmapLayout } from '../../charts/responsiveLayout'
-import { nextGridCell } from '../../charts/gridNavigation'
-import { useChartSize } from '../../charts/useChartSize'
-import type { PropertyDefinition, PropertyId } from '../../data/types'
-import type { buildCorrelationMatrix } from './analysisData'
+import { correlationDescription, type CorrelationRow } from './correlation'
+import { heatmapLayout } from './responsiveLayout'
+import { nextGridCell } from './gridNavigation'
+import { useChartSize } from './useChartSize'
+import type { ChartDimension } from './types'
+import './charts.css'
 
 function cellColor(value: number | null) {
   if (value === null) return '#edf0f5'
@@ -12,12 +12,12 @@ function cellColor(value: number | null) {
   return `hsl(${value < 0 ? 24 : 220} ${Math.abs(value) * 65}% ${97 - Math.abs(value) * 57}%)`
 }
 
-const propertyLabel = (property: PropertyDefinition) => `${property.name} (${property.group === 'inputs' ? 'Input' : 'Output'})`
+const propertyLabel = (property: ChartDimension) => `${property.label} (${property.groupLabel})`
 
-export function CorrelationHeatmapPlot({ columns, matrix, onInspect }: {
-  columns: readonly PropertyDefinition[]
-  matrix: ReturnType<typeof buildCorrelationMatrix>
-  onInspect: (x: PropertyId, y: PropertyId) => void
+export function CorrelationHeatmapPlot<Id extends string>({ columns, matrix, onInspect }: {
+  columns: readonly ChartDimension<Id>[]
+  matrix: readonly CorrelationRow<Id>[]
+  onInspect: (x: Id, y: Id) => void
 }) {
   const { container, width, preferredHeight } = useChartSize()
   const layout = heatmapLayout(width, columns.length, matrix.length, preferredHeight)
@@ -40,13 +40,13 @@ export function CorrelationHeatmapPlot({ columns, matrix, onInspect }: {
         <colgroup><col style={{ width: `${layout.rowLabelPercent}%` }} /><col span={columns.length} /></colgroup>
         <thead><tr><th scope="col">Y ↓ / X →</th>{columns.map((property, index) => <th scope="col" key={property.id}>
           <div className={index % layout.columnLabelStride === 0 ? 'heatmap-column-label' : 'sr-only'} title={propertyLabel(property)}>
-            <span>{property.name}</span><small>{property.group === 'inputs' ? 'Input' : 'Output'}</small>
+            <span>{property.label}</span><small>{property.groupLabel}</small>
           </div>
         </th>)}</tr></thead>
         <tbody>{matrix.map((row, index) => <tr key={row.property.id}>
           <th scope="row" title={propertyLabel(row.property)}>
             <div className={index % layout.rowLabelStride === 0 ? 'heatmap-row-label' : 'sr-only'}>
-              <span>{row.property.name}</span>{layout.showRowGroups && <small>{row.property.group === 'inputs' ? 'Input' : 'Output'}</small>}
+              <span>{row.property.label}</span>{layout.showRowGroups && <small>{row.property.groupLabel}</small>}
             </div>
           </th>
           {row.cells.map((cell, columnIndex) => <td key={cell.x.id}>

@@ -1,7 +1,19 @@
+import type { ChartDimension } from './types.ts'
+
 export interface Correlation {
   readonly value: number | null
   readonly count: number
   readonly unavailable: 'too-few-pairs' | 'constant-values' | null
+}
+
+export interface CorrelationCell<Id extends string = string> extends Correlation {
+  readonly x: ChartDimension<Id>
+  readonly y: ChartDimension<Id>
+}
+
+export interface CorrelationRow<Id extends string = string> {
+  readonly property: ChartDimension<Id>
+  readonly cells: readonly CorrelationCell<Id>[]
 }
 
 /** Pearson's r from paired finite observations; missing values are never imputed. */

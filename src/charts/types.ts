@@ -22,6 +22,28 @@ export interface ScatterPoint {
   readonly y: number
 }
 
+export interface NumericDatum {
+  readonly id: string
+  readonly label: string
+  readonly value: number
+}
+
+export interface ChartDimension<Id extends string = string> {
+  readonly id: Id
+  readonly label: string
+  readonly groupLabel: string
+}
+
+export interface ParallelDimension extends ChartDimension {
+  readonly domain: NumericDomain
+}
+
+export interface ParallelLine {
+  readonly id: string
+  readonly label: string
+  readonly values: readonly number[]
+}
+
 export interface CartesianLayout {
   readonly width: number
   readonly height: number

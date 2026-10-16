@@ -11,8 +11,10 @@ import { experimentFixture } from './fixtures.ts'
 const properties = createExperimentRepository(experimentFixture()).getProperties()
 
 describe('shared chart model', () => {
-  it('round-trips every registered chart independently of a dashboard, including an empty dataset', () => {
-    for (const dataset of [properties, []]) for (const chartType of chartTypes) {
+  it('round-trips every chart with empty, single-property, and single-group datasets', () => {
+    const datasets = [properties, [], properties.slice(0, 1),
+      properties.filter(property => property.group === 'inputs'), properties.filter(property => property.group === 'outputs')]
+    for (const dataset of datasets) for (const chartType of chartTypes) {
       const configuration = { ...createChartConfiguration(dataset), chartType }
       const decoded = validateChartConfiguration(JSON.parse(JSON.stringify(configuration)), dataset)
       assert.deepEqual(decoded, configuration)

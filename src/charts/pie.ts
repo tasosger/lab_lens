@@ -1,26 +1,27 @@
-import { buildHistogram, histogramBinLabel, type HistogramBinCount, type HistogramDatum } from './histogram.ts'
+import { buildHistogram, histogramBinLabel, type HistogramBinCount } from './histogram.ts'
+import type { NumericDatum } from './types.ts'
 
 export type PieGrouping = 'ranges' | 'values'
 export interface PieSlice {
   readonly id: string
   readonly label: string
-  readonly items: readonly HistogramDatum[]
+  readonly items: readonly NumericDatum[]
   readonly fraction: number
   readonly startAngle: number
   readonly endAngle: number
 }
 
 /** Slices are counts of experiments, never sums of measurements with mixed units. */
-export function buildPieData(items: readonly HistogramDatum[], grouping: PieGrouping, bins: HistogramBinCount,
+export function buildPieData(items: readonly NumericDatum[], grouping: PieGrouping, bins: HistogramBinCount,
   format: (value: number) => string = String) {
   const finite = items.filter(item => Number.isFinite(item.value))
-  let groups: { id: string; label: string; items: readonly HistogramDatum[] }[]
+  let groups: { id: string; label: string; items: readonly NumericDatum[] }[]
   if (grouping === 'ranges') {
     groups = buildHistogram(finite, bins).bins.filter(bin => bin.items.length).map(bin => ({
       id: `range:${bin.lower}:${bin.upper}`, label: histogramBinLabel(bin, format), items: bin.items,
     }))
   } else {
-    const values = new Map<number, HistogramDatum[]>()
+    const values = new Map<number, NumericDatum[]>()
     for (const item of finite) {
       const group = values.get(item.value) ?? []
       group.push(item)

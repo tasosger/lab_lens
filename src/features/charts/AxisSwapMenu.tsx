@@ -1,7 +1,6 @@
 import { useDetailsDropdown } from '../../components/useDetailsDropdown'
 import { Icon } from '../../components/Icon'
-
-export type AxisSwap = 'xy' | 'xz' | 'yz'
+import type { AxisSwap } from '../../chart-model/types.ts'
 
 export function AxisSwapMenu({ threeDimensional, disabled, onSwap }: {
   threeDimensional: boolean

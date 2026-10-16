@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
@@ -11,11 +11,15 @@ const boundaries = {
   charts: ['charts'],
   'chart-model': ['chart-model', 'data', 'charts'],
   dashboards: ['dashboards', 'chart-model', 'data', 'charts'],
+  components: ['components', 'data'],
+  'features/charts': ['features/charts', 'chart-model', 'data', 'charts', 'components', 'format.ts'],
+  'features/dashboards': ['features/dashboards', 'features/charts', 'dashboards', 'chart-model', 'data', 'charts', 'components'],
 } as const
+const pureLayers = new Set(['data', 'chart-model', 'dashboards'])
 
 describe('architecture boundaries', () => {
   for (const [layer, allowed] of Object.entries(boundaries)) {
-    it(`${layer} cannot depend on feature UI or higher layers`, () => {
+    it(`${layer} depends only on its allowed layers`, () => {
       const folder = resolve(source, layer)
       for (const name of readdirSync(folder, { recursive: true, encoding: 'utf8' }).filter(name => /\.tsx?$/.test(name))) {
         const file = resolve(folder, name)
@@ -26,12 +30,13 @@ describe('architecture boundaries', () => {
           if (!specifier || !ts.isStringLiteral(specifier)) continue
           const target = specifier.text
           if (target.startsWith('.')) {
-            const dependency = relative(source, resolve(dirname(file), target)).split(sep)[0]
-            assert.ok((allowed as readonly string[]).includes(dependency), `${layer}/${name} depends on ${target}`)
-            if (layer === 'data' || layer === 'chart-model' || layer === 'dashboards') {
-              assert.ok(!target.endsWith('.tsx'), `${layer}/${name} imports a React component`)
+            const dependency = relative(source, resolve(dirname(file), target)).split(sep).join('/')
+            assert.ok(allowed.some(prefix => dependency === prefix || dependency.startsWith(`${prefix}/`)), `${layer}/${name} depends on ${target}`)
+            if (pureLayers.has(layer)) {
+              const component = target.endsWith('.tsx') || (!/\.[^/]+$/.test(target) && existsSync(resolve(dirname(file), `${target}.tsx`)))
+              assert.ok(!component, `${layer}/${name} imports a React component`)
             }
-          } else if (layer !== 'charts') {
+          } else if (pureLayers.has(layer)) {
             assert.ok(!target.startsWith('react'), `${layer}/${name} imports React`)
           }
         }

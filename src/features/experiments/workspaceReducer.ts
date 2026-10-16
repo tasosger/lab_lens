@@ -1,5 +1,6 @@
 import type { ExperimentQuery, ExperimentSort, PropertyDefinition, PropertyId } from '../../data/types.ts'
-import { createChartConfiguration, reduceChartConfiguration, type ChartAction, type ChartConfiguration } from '../../chart-model/configuration.ts'
+import { createChartConfiguration, reduceChartConfiguration } from '../../chart-model/configuration.ts'
+import type { ChartAction, ChartConfiguration } from '../../chart-model/types.ts'
 import { createFilterEditorState, getFilterEditorTree, reduceFilterEditor, type FilterEditorAction, type FilterEditorState } from './filterEditorState.ts'
 import { toFilterExpression, type AppliedFilterGroup } from './filterTree.ts'
 

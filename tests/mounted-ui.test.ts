@@ -40,6 +40,35 @@ async function enterValue(selector: string, value: string) {
   })
 }
 
+describe('reusable chart renderers', () => {
+  it('renders supplied dimension labels and reports identifiers without experiment property definitions', async () => {
+    const { CorrelationHeatmapPlot } = await server.ssrLoadModule('/src/charts/CorrelationHeatmapPlot.tsx')
+    const cost = { id: 'cost', label: 'Cost', groupLabel: 'Economics' }
+    const yieldAxis = { id: 'yield', label: 'Yield', groupLabel: 'Production' }
+    const inspected: string[][] = []
+    await dom.render(createElement(CorrelationHeatmapPlot, {
+      columns: [cost], matrix: [{ property: yieldAxis, cells: [{ x: cost, y: yieldAxis, value: 0.5, count: 3, unavailable: null }] }],
+      onInspect: (x: string, y: string) => inspected.push([x, y]),
+    }))
+    const cell = element<HTMLButtonElement>('.correlation-cell')
+    assert.match(cell.getAttribute('aria-label')!, /Yield \(Production\) versus Cost \(Economics\)/)
+    assert.equal(cell.tabIndex, 0)
+    await dom.click(cell)
+    assert.deepEqual(inspected, [['cost', 'yield']])
+
+    const { ParallelCoordinatesPlot } = await server.ssrLoadModule('/src/charts/ParallelCoordinatesPlot.tsx')
+    const opened: string[] = []
+    await dom.render(createElement(ParallelCoordinatesPlot, {
+      dimensions: [cost, yieldAxis].map(axis => ({ ...axis, domain: [0, 10] })),
+      lines: [{ id: 'sample-1', label: 'Sample 1', values: [2, 8] }], selectedIds: [],
+      onOpen: (id: string) => opened.push(id),
+    }))
+    assert.deepEqual([...dom.container.querySelectorAll('.parallel-axis-group')].map(label => label.textContent), ['Economics', 'Production'])
+    await dom.key(element('.parallel-line'), 'Enter')
+    assert.deepEqual(opened, ['sample-1'])
+  })
+})
+
 describe('mounted filter flow', () => {
   it('adds from search, previews the complete query, and edits in place without applying canceled changes', async () => {
     const { ExperimentWorkspace } = await server.ssrLoadModule('/src/features/experiments/ExperimentWorkspace.tsx')

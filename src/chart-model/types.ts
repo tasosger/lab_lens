@@ -1,10 +1,16 @@
 import type { OrbitCamera } from '../charts/projection3D.ts'
 import type { PropertyId } from '../data/types.ts'
-import type { ChartAxes } from './scatter.ts'
 import type { HistogramBinCount } from '../charts/histogram.ts'
 import type { PieGrouping } from '../charts/pie.ts'
 
 export type ChartType = keyof ChartSettingsByType
+
+export interface ChartAxes {
+  readonly x: PropertyId | null
+  readonly y: PropertyId | null
+}
+
+export type AxisSwap = 'xy' | 'xz' | 'yz'
 
 export interface ChartConfiguration {
   chartType: ChartType
@@ -38,7 +44,7 @@ export type ChartAction =
   | { type: 'chart-axis'; axis: 'x' | 'y'; propertyId: PropertyId }
   | { type: 'chart-z'; propertyId: PropertyId }
   | { type: 'chart-camera'; camera: OrbitCamera }
-  | { type: 'swap-chart-axes'; pair?: 'xy' | 'xz' | 'yz' }
+  | { type: 'swap-chart-axes'; pair?: AxisSwap }
 
 /** Settings contributed by each chart. The flat shape preserves saved v1 dashboards. */
 export interface ChartSettingsByType {

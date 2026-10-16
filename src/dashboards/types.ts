@@ -1,4 +1,4 @@
-import type { ChartConfiguration } from '../chart-model/configuration.ts'
+import type { ChartConfiguration } from '../chart-model/types.ts'
 
 export type DashboardTemplate = 'grid' | 'stack' | 'feature'
 export type DashboardLayout = DashboardTemplate | 'custom'

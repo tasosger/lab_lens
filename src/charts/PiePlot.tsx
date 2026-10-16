@@ -1,6 +1,7 @@
 import { useContext } from 'react'
 import { pieColor, pieSlicePath, type PieSlice } from './pie'
 import { ChartHeightContext } from './useChartSize'
+import './charts.css'
 
 export function PiePlot({ slices, selectedSliceId, onSelect }: {
   slices: readonly PieSlice[]

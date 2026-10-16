@@ -1,19 +1,12 @@
-import { buildHistogram, type HistogramBinCount, type HistogramDatum } from '../../charts/histogram.ts'
-import { getPropertyValue } from '../../data/properties.ts'
+import { buildHistogram, type HistogramBinCount } from '../../charts/histogram.ts'
 import type { Experiment, PropertyDefinition } from '../../data/types.ts'
+import { matchingExperiments, propertyData } from './experimentData.ts'
 
 /** Count only matching experiments; missing measurements never become zeros. */
 export function buildExperimentHistogram(experiments: readonly Experiment[], property: PropertyDefinition,
   binCount: HistogramBinCount = 'auto', matchingIds?: readonly string[]) {
-  const matching = matchingIds ? new Set(matchingIds) : null
-  const items: HistogramDatum[] = []
-  let missing = 0
-  for (const experiment of experiments) {
-    if (matching && !matching.has(experiment.id)) continue
-    const value = getPropertyValue(experiment, property)
-    if (value === undefined || !Number.isFinite(value)) { missing++; continue }
-    items.push({ id: experiment.id, label: experiment.id, value })
-  }
-  const histogram = buildHistogram(items, binCount)
-  return { ...histogram, omittedCount: histogram.omittedCount + missing }
+  const matching = matchingIds ? matchingExperiments(experiments, matchingIds) : experiments
+  const data = propertyData(matching, property)
+  const histogram = buildHistogram(data.items, binCount)
+  return { ...histogram, omittedCount: histogram.omittedCount + data.omittedCount }
 }

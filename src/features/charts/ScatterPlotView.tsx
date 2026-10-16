@@ -1,3 +1,4 @@
+import type { ChartAxes, AxisSwap, ChartType } from '../../chart-model/types.ts'
 import { useMemo } from 'react'
 import { ChartDataTable } from '../../charts/ChartDataTable'
 import { ScatterPlot } from '../../charts/ScatterPlot'
@@ -5,11 +6,8 @@ import type { Experiment, PropertyDefinition, PropertyId } from '../../data'
 import { formatValue } from '../../format.ts'
 import { Icon } from '../../components/Icon'
 import { buildScatterData } from './scatterData'
-import type { ChartAxes } from '../../chart-model/scatter.ts'
-import type { AxisSwap } from './AxisSwapMenu'
 import { ScatterPlotControls } from './ScatterPlotControls'
-import type { ChartType } from '../../chart-model/configuration.ts'
-import './scatterView.css'
+import './chartViews.css'
 
 interface ScatterPlotViewProps {
   onTypeChange: (type: ChartType) => void

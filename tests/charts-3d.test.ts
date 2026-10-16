@@ -1,4 +1,4 @@
-import { defaultChartAxes, defaultChartZ } from '../src/chart-model/scatter.ts'
+import { defaultChartAxes, defaultChartZ } from '../src/chart-model/defaults.ts'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { numericDomain } from '../src/charts/numericScale.ts'

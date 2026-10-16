@@ -4,10 +4,10 @@ import { MAX_HISTOGRAM_BINS } from '../../charts/histogram'
 import { buildPieData, pieColor } from '../../charts/pie'
 import { PropertySelect } from '../../components/PropertySelect'
 import { formatValue } from '../../format.ts'
-import { matchingExperiments, propertyData } from './analysisData'
+import { matchingExperiments, propertyData } from './experimentData'
 import { ChartTypeSelect } from './ChartTypeSelect'
 import type { ChartViewProps } from './ChartViewProps'
-import './analysisCharts.css'
+import './chartViews.css'
 
 export function PieChartView({ id, showControls, configuration, onChartAction, experiments, matchingIds, selectedIds,
   properties, isFiltered, onOpen, onResetQuery }: ChartViewProps) {

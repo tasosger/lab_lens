@@ -49,6 +49,10 @@ Selection highlights points and lines or shows selected counts in bins/slices. I
 
 [ExperimentChartView](../src/features/charts/ExperimentChartView.tsx) dispatches through [chartRenderers](../src/features/charts/chartRenderers.tsx). The [catalog](../src/chart-model/registry.ts) supplies type labels, result hints, active properties, zero-input policy, defaults, and settings readers.
 
+All chart defaults and shared property-selection fallbacks live in [defaults.ts](../src/chart-model/defaults.ts); configuration contracts, including axes and swap actions, live in [types.ts](../src/chart-model/types.ts). Import contracts directly from that module.
+
+Each plot renderer lives in `src/charts/` and receives chart data, with experiment preparation in `scatterData.ts`, `histogramData.ts`, `correlationData.ts`, and `parallelData.ts`. Shared record selection, numeric values, and dimension labels live in [experimentData.ts](../src/features/charts/experimentData.ts). Histogram and pie reuse the same value extraction and histogram binning. Renderer styles live in `charts.css`; shared controls and view layout live in `chartViews.css`.
+
 Adapters memoize data preparation against their data/settings inputs. Chart configuration retains identity across unrelated workspace actions. Dashboard layout and title updates can rerender wrappers independently of [DashboardChart](../src/features/dashboards/DashboardChart.tsx); size changes still update geometry.
 
 ## Saved settings
@@ -60,7 +64,7 @@ Legacy 3D settings remain readable, but scatterplots render only X/Y. An old Z p
 ## Add a chart type
 
 1. Extend `ChartType`, its settings, and `ChartSettingsByType` in [types.ts](../src/chart-model/types.ts).
-2. Add a [catalog entry](../src/chart-model/registry.ts) with defaults and a validated reader. Compose these in [createChartConfiguration](../src/chart-model/configuration.ts) and [validateChartConfiguration](../src/chart-model/validation.ts), including defaults for older saved dashboards.
+2. Add initial settings in [defaults.ts](../src/chart-model/defaults.ts) and reference them from a [catalog entry](../src/chart-model/registry.ts) with a validated reader. Compose these in [createChartConfiguration](../src/chart-model/configuration.ts) and [validateChartConfiguration](../src/chart-model/validation.ts), including defaults for older saved dashboards.
 3. Add actions and reducer cases in [configuration.ts](../src/chart-model/configuration.ts). Workspace and dashboard chart actions use this reducer.
 4. Implement an experiment adapter and a view accepting [ChartViewProps](../src/features/charts/ChartViewProps.ts), then register it in [chartRenderers.tsx](../src/features/charts/chartRenderers.tsx). Keep generic math and drawing in `src/charts/`.
 5. Test numerical edge cases, missing/zero behavior, saved-setting round trips, and an interaction flow. Run `npm run check` from the repository root.

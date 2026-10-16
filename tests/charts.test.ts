@@ -1,4 +1,4 @@
-import { defaultChartAxes } from '../src/chart-model/scatter.ts'
+import { defaultChartAxes } from '../src/chart-model/defaults.ts'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { formatTicks, linearScale, numericDomain, numericTicks } from '../src/charts/numericScale.ts'

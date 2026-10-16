@@ -1,6 +1,6 @@
 import { isAbsentInput, isIngredientInput } from '../../data/inputPresence.ts'
 import type { Experiment, PropertyDefinition } from '../../data/types.ts'
-import type { ChartConfiguration } from '../../chart-model/configuration.ts'
+import type { ChartConfiguration } from '../../chart-model/types.ts'
 import { chartDefinitions } from '../../chart-model/registry.ts'
 
 /** Only properties used by this chart can exclude experiments. */
