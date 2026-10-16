@@ -2,7 +2,6 @@
 .app-sidebar .sidebar-link { width: 100%; border: 0; background: transparent; color: var(--muted); text-align: left; font-family: inherit; }
 .app-sidebar .sidebar-link:hover { background: var(--surface-muted); }
 .app-sidebar .sidebar-link[aria-current='page'] { background: #eef2ff; color: var(--accent-dark); }
-.selection-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin-left: auto; }
 .comparison-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px; padding: 22px 24px 16px; }
 .comparison-baseline { display: flex; flex-direction: column; gap: 7px; min-width: 0; max-width: 100%; font-size: 12px; color: var(--muted); }
 .comparison-baseline select { min-height: 42px; max-width: 100%; padding: 8px 12px; border: 1px solid var(--border); background: white; color: #35425a; font-size: 13px; }
@@ -42,13 +41,10 @@
   .comparison-toolbar { padding: 18px; gap: 12px; }
   .comparison-summary { padding-left: 18px; padding-right: 18px; }
   .comparison-edit { margin-left: 0; }
-  .selection-actions { gap: 6px; }
-  .selection-summary:has(.selection-actions) { flex-wrap: wrap; }
   .comparison-table .comparison-property { min-width: 130px; width: 130px; padding: 12px; }
   .comparison-table thead th { min-width: 220px; }
 }
 @media (max-width: 520px) {
   .app-sidebar .sidebar-nav .sidebar-link-label { display: none; }
   .comparison-toolbar { align-items: flex-start; flex-direction: column; }
-  .selection-actions { width: 100%; justify-content: space-between; }
 }

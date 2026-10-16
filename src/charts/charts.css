@@ -46,10 +46,3 @@
 .orbit-axis-2 { color: #8551a0; }
 .orbit-grid .orbit-axis line { stroke: currentColor; stroke-width: 1.8; }
 .orbit-grid .orbit-axis-title { fill: currentColor; font-size: 13px; font-weight: 700; }
-.orbit-axis-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; padding: 10px 20px; font-size: 11px; }
-.orbit-axis-legend strong { margin-right: 5px; }
-.orbit-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; padding: 10px 24px 6px; }
-.orbit-controls label { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; flex: 1 1 120px; color: #53617b; font-size: 11px; }
-.orbit-controls output { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-.orbit-controls input { display: block; width: 100%; min-width: 0; accent-color: var(--accent); }
-.orbit-controls .button { min-height: 36px; padding: 7px 12px; font-size: 12px; }

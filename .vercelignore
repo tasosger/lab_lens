@@ -1,0 +1,7 @@
+# Keep local notes and generated files out of CLI uploads.
+DESIGN.md
+dist/
+dist-ssr/
+*.local
+*.log
+*.tsbuildinfo

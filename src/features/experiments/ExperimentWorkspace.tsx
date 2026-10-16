@@ -7,6 +7,7 @@ import {
 import { ExperimentDetails } from './ExperimentDetails'
 import { ComparisonView } from './ComparisonView'
 import { ScatterPlotView } from '../charts/ScatterPlotView'
+import { DashboardWorkspace } from '../dashboards/DashboardWorkspace'
 import { PlotRangeFilterControls } from '../charts/PlotRangeFilterControls'
 import { rangeForAxes } from '../charts/propertyRangeFilter'
 import { FilterGroupEditor } from './FilterGroupEditor'
@@ -23,13 +24,14 @@ import {
   type WorkspaceView,
 } from './workspaceReducer'
 
-const viewHeadings: Record<WorkspaceView, string> = { explore: 'Experiments', compare: 'Compare experiments', charts: 'Charts' }
-const viewTargets: Record<WorkspaceView, string> = { explore: 'experiments', compare: 'comparison', charts: 'charts' }
+const viewHeadings: Record<WorkspaceView, string> = { explore: 'Experiments', compare: 'Compare experiments', charts: 'Charts', dashboards: 'Dashboards' }
+const viewTargets: Record<WorkspaceView, string> = { explore: 'experiments', compare: 'comparison', charts: 'charts', dashboards: 'dashboards' }
 
 export function ExperimentWorkspace({ repository }: { repository: ExperimentRepository }) {
   const properties = repository.getProperties()
   const [state, dispatch] = useReducer(workspaceReducer, properties, createWorkspaceState)
   const [openControl, setOpenControl] = useState<'filters' | 'columns' | null>(null)
+  const [dashboardDetailHidden, setDashboardDetailHidden] = useState(false)
   const filterButton = useRef<HTMLButtonElement>(null)
   const columnButton = useRef<HTMLButtonElement>(null)
   const pageHeading = useRef<HTMLHeadingElement>(null)
@@ -151,8 +153,11 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
           />
         )}
 
+        <DashboardWorkspace active={state.activeView === 'dashboards'} repository={repository} selectedIds={state.selectedIds}
+          onOpen={(id, hidden) => { setDashboardDetailHidden(hidden); dispatch({ type: 'open-experiment', id }) }} />
+
         <section
-          hidden={state.activeView === 'compare'}
+          hidden={state.activeView === 'compare' || state.activeView === 'dashboards'}
           className="experiment-card"
           aria-labelledby="experiments-heading"
         >
@@ -342,7 +347,7 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
               selectedIds={state.selectedIds}
               isFiltered={isFiltered}
               onAxisChange={(axis, propertyId) => dispatch({ type: 'chart-axis', axis, propertyId })}
-              onSwapAxes={() => dispatch({ type: 'swap-chart-axes' })}
+              onSwapAxes={(pair) => dispatch({ type: 'swap-chart-axes', pair })}
               onOpen={(id) => dispatch({ type: 'open-experiment', id })}
               onResetQuery={() => dispatch({ type: 'reset-query' })}
             />
@@ -476,7 +481,7 @@ export function ExperimentWorkspace({ repository }: { repository: ExperimentRepo
           datasetCount={results.total}
           selected={state.selectedIds.includes(openExperiment.id)}
           selectionFull={selectionFull}
-          hidden={!results.items.some((experiment) => experiment.id === openExperiment.id)}
+          hidden={state.activeView === 'dashboards' ? dashboardDetailHidden : !results.items.some((experiment) => experiment.id === openExperiment.id)}
           onToggleSelection={() => dispatch({
             type: 'toggle-selection',
             id: openExperiment.id,

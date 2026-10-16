@@ -57,6 +57,10 @@ export function WorkspaceSidebar({
           <Icon name="chart" />
           <span className="sidebar-link-label">Charts</span>
         </button>
+        <button className="sidebar-link" onClick={() => onNavigate('dashboards')}
+          aria-current={activeView === 'dashboards' ? 'page' : undefined} aria-label="Dashboards" title="Dashboards">
+          <Icon name="dashboard" /><span className="sidebar-link-label">Dashboards</span>
+        </button>
       </nav>
 
       <section className="sidebar-dataset" aria-labelledby="sidebar-dataset-title">

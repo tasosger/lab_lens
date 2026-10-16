@@ -9,9 +9,12 @@ import { formatValue } from '../experiments/format'
 import { Icon } from '../experiments/Icon'
 import { buildScatterData, buildScatter3DData, type ChartAxes } from './scatterData'
 import type { PropertyRangeFilter } from './propertyRangeFilter'
+import { AxisSwapMenu, type AxisSwap } from './AxisSwapMenu'
 import './scatterView.css'
 
 interface ScatterPlotViewProps {
+  id?: string
+  filterTarget?: string
   experiments: readonly Experiment[]
   matchingIds: readonly string[]
   rangeSelection: CartesianRange | null
@@ -28,12 +31,12 @@ interface ScatterPlotViewProps {
   selectedIds: readonly string[]
   isFiltered: boolean
   onAxisChange: (axis: 'x' | 'y', propertyId: PropertyId) => void
-  onSwapAxes: () => void
+  onSwapAxes: (pair: AxisSwap) => void
   onOpen: (id: string) => void
   onResetQuery: () => void
 }
 
-export function ScatterPlotView({ experiments, matchingIds, rangeSelection, hasPlotFilter, onPlotFilter, properties, axes, mode, zPropertyId, camera, onModeChange, onZChange, onCameraChange, selectedIds, isFiltered, onAxisChange, onSwapAxes, onOpen, onResetQuery }: ScatterPlotViewProps) {
+export function ScatterPlotView({ id = 'charts', filterTarget = 'the experiment table', experiments, matchingIds, rangeSelection, hasPlotFilter, onPlotFilter, properties, axes, mode, zPropertyId, camera, onModeChange, onZChange, onCameraChange, selectedIds, isFiltered, onAxisChange, onSwapAxes, onOpen, onResetQuery }: ScatterPlotViewProps) {
   const xProperty = properties.find((property) => property.id === axes.x)
   const yProperty = properties.find((property) => property.id === axes.y)
   const zProperty = properties.find((property) => property.id === zPropertyId)
@@ -43,19 +46,19 @@ export function ScatterPlotView({ experiments, matchingIds, rangeSelection, hasP
   const matchingPoints = data?.points.filter((point) => matching.has(point.id)) ?? []
 
   return (
-    <section id="charts" className="scatter-view" aria-label="Scatterplot">
-      <div className="chart-view-mode" role="group" aria-label="Scatterplot dimensions">
-        <span>Scatterplot</span>
-        <button className={`button${mode === '2d' ? ' active' : ''}`} aria-pressed={mode === '2d'} onClick={() => onModeChange('2d')}>2D</button>
-        <button className={`button${mode === '3d' ? ' active' : ''}`} aria-pressed={mode === '3d'} onClick={() => onModeChange('3d')}>3D</button>
-      </div>
-      <div className="chart-controls">
+    <section id={id} className="scatter-view" aria-label="Scatterplot">
+      <div className={`chart-controls${mode === '3d' ? ' chart-controls-3d' : ''}`}>
+        <label className="property-select chart-type-select">
+          <span>Chart type</span>
+          <select value={mode} onChange={(event) => onModeChange(event.target.value === '3d' ? '3d' : '2d')}>
+            <option value="2d">2D scatterplot</option>
+            <option value="3d">3D scatterplot</option>
+          </select>
+        </label>
         <PropertySelect label="X axis" properties={properties} value={axes.x} onChange={(id) => onAxisChange('x', id)} />
-        <button className="button chart-swap" disabled={!xProperty || !yProperty} onClick={onSwapAxes}>
-          <Icon name="swap" />Swap axes
-        </button>
         <PropertySelect label="Y axis" properties={properties} value={axes.y} onChange={(id) => onAxisChange('y', id)} />
         {mode === '3d' && <PropertySelect label="Z axis" properties={properties} value={zPropertyId} onChange={onZChange} />}
+        <AxisSwapMenu key={mode} threeDimensional={mode === '3d'} disabled={!xProperty || !yProperty || (mode === '3d' && !zProperty)} onSwap={onSwapAxes} />
       </div>
 
       {!xProperty || !yProperty || (mode === '3d' && !zProperty) ? (
@@ -85,8 +88,8 @@ export function ScatterPlotView({ experiments, matchingIds, rangeSelection, hasP
               formatValue={formatValue} onPointActivate={onOpen} />}
           </div>
           <p className="chart-help">{mode === '3d'
-            ? 'Drag to rotate. Use the sliders to rotate, tilt, or zoom, and Reset view to restore the camera. Hover or focus for all three values; click or press Enter to open details. Existing plot ranges still apply; switch to 2D to draw a new range.'
-            : 'In inspect mode, hover or focus for values; click or press Enter to open details. Plot ranges also filter the experiment table. Faded, hollow points remain as context. Drawing a new range replaces the previous plot range.'}</p>
+            ? 'Drag to rotate and tilt · Scroll to zoom · Double-click the background to reset · Click a point for details.'
+            : `In inspect mode, hover or focus for values; click or press Enter to open details. Plot ranges also filter ${filterTarget}. Faded, hollow points remain as context. Drawing a new range replaces this plot’s previous range.`}</p>
           <ChartDataTable points={matchingPoints} xLabel={xProperty.name} yLabel={yProperty.name} zLabel={mode === '3d' ? zProperty?.name : undefined} itemLabel="Experiment" formatValue={formatValue} onPointActivate={onOpen} />
         </>
       )}

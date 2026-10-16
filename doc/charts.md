@@ -1,6 +1,6 @@
 # Charts
 
-The Charts view provides two numeric axes, shared search/filter results, point inspection, and range filtering. Histograms and other chart types remain future work.
+The Charts view supports 2D and 3D scatterplots with shared search/filter results, point inspection, and range filtering. Histograms remain future work.
 
 ## Boundaries
 
@@ -12,6 +12,10 @@ The Charts view provides two numeric axes, shared search/filter results, point i
 | `ChartAxis.tsx` | Numeric ticks, labels, and grid lines for either orientation. |
 | `CartesianChart.tsx` | Responsive SVG frame and axes, with render functions for plotted marks and HTML overlays. |
 | `ScatterPlot.tsx` | Point rendering, hover/focus values, highlighting, and activation callbacks. |
+| `ScatterPlot3D.tsx` | Three-axis SVG projection, depth ordering, cube axes, and three-value tooltips. |
+| `projection3D.ts` | Pure property normalization, orthographic projection, camera bounds, and drag calculations. |
+| `useOrbitDrag.ts` | Drag rotation/tilt with click suppression, a local non-passive wheel listener for zoom, and background double-click reset. |
+| `AxisSwapMenu.tsx` | Compact X/Y, X/Z, and Y/Z swaps, with outside-click, blur, and Escape dismissal. |
 | `rangeSelection.ts` | Pure rectangle geometry, clipping, drag thresholds, and conversion between pixels and numeric ranges. |
 | `useRangeBrush.ts` / `CartesianBrush.tsx` | Pointer capture, cancellable drag previews, and the reusable SVG selection layer. |
 | `rangeInput.ts` / `CartesianRangeEditor.tsx` | Validated numeric bounds and a keyboard-accessible range form. |
@@ -35,6 +39,11 @@ Components in `src/charts/` do not import experiment data or workspace state. Ad
 - Hover/focus shows values; click or Enter/Space opens details. Selecting in details updates the shared selection and plot highlight.
 - Axis choices survive view changes and query resets; a page refresh resets the workspace.
 - Labels retain source property names. Units are not invented.
+- 2D remains the default. 3D adds a Z property (Elongation by default). Every plotted record must contain all three measurements, including valid zeros.
+- The 3D camera rotates independently normalized property ranges and draws points from back to front. Original values appear in tooltips and the data table, which adds a Z column.
+- The chart-type selector chooses 2D or 3D scatterplots. Mode, Z selection, and camera settings survive view changes. Mouse dragging rotates and tilts; scrolling over the plot zooms; double-clicking the background resets only the camera. Existing plot ranges remain active in 3D; drawing a new range uses 2D.
+- All three axis pairs can be exchanged. Swaps retain property-bound filters, selections, and camera settings.
+- `tests/charts-3d.test.ts` covers Z values, missing triples, projection, camera bounds, and state preservation.
 
 ## Filtering from the plot
 

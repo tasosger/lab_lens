@@ -1,8 +1,13 @@
-.chart-controls { display: flex; align-items: flex-end; gap: 14px; padding: 20px 24px; border-top: 1px solid var(--border); background: var(--surface-muted); }
-.chart-swap { font-size: 12px; }
-.chart-view-mode { display: flex; align-items: center; gap: 6px; padding: 0 24px 18px; }
-.chart-view-mode > span { margin-right: auto; color: #46556d; font-size: 13px; font-weight: 600; }
-.chart-view-mode .button { min-height: 34px; padding: 5px 14px; }
+.chart-controls { display: grid; grid-template-columns: minmax(150px, 1fr) repeat(2, minmax(0, 1fr)) auto; align-items: end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); background: var(--surface-muted); }
+.chart-controls-3d { grid-template-columns: minmax(150px, 1fr) repeat(3, minmax(0, 1fr)) auto; }
+.chart-axis-swaps { position: relative; }
+.chart-axis-swaps > summary { list-style: none; font-size: 12px; cursor: pointer; }
+.chart-axis-swaps > summary::-webkit-details-marker { display: none; }
+.chart-axis-swaps > summary .icon:last-child { width: 12px; transform: rotate(90deg); }
+.chart-axis-swaps > summary:focus-visible { outline: 3px solid #7b96ee; outline-offset: 3px; }
+.chart-swap-options { position: absolute; right: 0; top: calc(100% + 6px); z-index: 3; display: grid; min-width: 140px; padding: 5px; border: 1px solid var(--border); border-radius: 10px; background: white; box-shadow: 0 8px 24px #14243e12; }
+.chart-swap-options button { padding: 10px 14px; border: 0; background: white; font-size: 12px; text-align: left; }
+.chart-swap-options button:hover:not(:disabled) { background: #f2f5ff; }
 .chart-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 22px 24px 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .chart-summary strong { color: #46556d; font-weight: 600; }
 .chart-legend { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; }
@@ -14,9 +19,9 @@
 .plot-filter-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
 .plot-filter-heading p { flex: 1; min-width: 180px; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
-  .chart-controls { padding: 18px; gap: 10px; flex-wrap: wrap; }
-  .chart-controls .property-select { flex-basis: calc(50% - 5px); }
-  .chart-swap { order: 1; }
+  .chart-controls { padding: 18px; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-axis-swaps { justify-self: start; }
+  .chart-swap-options { right: auto; left: 0; }
   .chart-summary { padding-left: 18px; padding-right: 18px; }
   .chart-surface { padding-right: 4px; padding-left: 0; }
   .chart-help { padding-left: 18px; padding-right: 18px; }

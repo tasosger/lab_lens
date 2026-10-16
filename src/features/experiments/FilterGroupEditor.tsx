@@ -8,12 +8,12 @@ import {
   type AppliedFilterGroup,
 } from './filterTree'
 import { Icon } from './Icon'
-import type { WorkspaceAction } from './workspaceReducer'
+import type { FilterEditorAction } from './filterEditorState'
 
 export function FilterGroupEditor({ group, properties, dispatch, onRemove }: {
   group: AppliedFilterGroup
   properties: readonly PropertyDefinition[]
-  dispatch: Dispatch<WorkspaceAction>
+  dispatch: Dispatch<FilterEditorAction>
   onRemove?: () => void
 }) {
   const [addingCondition, setAddingCondition] = useState(false)

@@ -1,31 +1,17 @@
-import type { ExperimentQuery, ExperimentSort, FilterExpression, NumericFilter, PropertyDefinition, PropertyId } from '../../data/types.ts'
+import type { ExperimentQuery, ExperimentSort, FilterExpression, PropertyDefinition, PropertyId } from '../../data/types.ts'
 import { isCartesianRange } from '../../charts/rangeSelection.ts'
 import { propertyRangeConditions, type PropertyRangeFilter } from '../charts/propertyRangeFilter.ts'
-import { defaultChartAxes, defaultChartZ, type ChartAxes } from '../charts/scatterData.ts'
-import { DEFAULT_ORBIT_CAMERA, normalizeCamera, type OrbitCamera } from '../../charts/projection3D.ts'
-import {
-  removeFilterNode,
-  toFilterExpression,
-  updateFilterCondition,
-  updateFilterGroup,
-  type AppliedFilterGroup,
-  type AppliedFilterNode,
-} from './filterTree.ts'
+import { createChartConfiguration, reduceChartConfiguration, type ChartAction, type ChartConfiguration } from '../charts/chartConfiguration.ts'
+import { createFilterEditorState, getFilterEditorTree, reduceFilterEditor, type FilterEditorAction, type FilterEditorState } from './filterEditorState.ts'
+import { toFilterExpression, type AppliedFilterGroup } from './filterTree.ts'
 
 export const SELECTION_LIMIT = 100
-export type WorkspaceView = 'explore' | 'compare' | 'charts'
+export type WorkspaceView = 'explore' | 'compare' | 'charts' | 'dashboards'
 
-export interface WorkspaceState {
+export interface WorkspaceState extends ChartConfiguration, FilterEditorState {
   activeView: WorkspaceView
-  chartAxes: ChartAxes
-  chartMode: '2d' | '3d'
-  chartZ: PropertyId | null
-  chartCamera: OrbitCamera
   plotFilter: PropertyRangeFilter | null
   search: string
-  filters: AppliedFilterNode[]
-  filterMode: 'and' | 'or'
-  nextFilterId: number
   sort: ExperimentSort
   visibleColumns: PropertyId[]
   selectedIds: string[]
@@ -35,22 +21,13 @@ export interface WorkspaceState {
 }
 
 export type WorkspaceAction =
+  | ChartAction
+  | FilterEditorAction
   | { type: 'view'; view: WorkspaceView }
-  | { type: 'chart-mode'; mode: '2d' | '3d' }
-  | { type: 'chart-z'; propertyId: PropertyId }
-  | { type: 'chart-camera'; camera: OrbitCamera }
-  | { type: 'chart-axis'; axis: 'x' | 'y'; propertyId: PropertyId }
-  | { type: 'swap-chart-axes' }
   | { type: 'set-plot-filter'; filter: PropertyRangeFilter | null }
   | { type: 'baseline'; id: string }
   | { type: 'differences-only'; value: boolean }
   | { type: 'search'; value: string }
-  | { type: 'add-filter'; condition: NumericFilter; groupId?: number }
-  | { type: 'update-filter'; id: number; condition: NumericFilter }
-  | { type: 'add-filter-group'; groupId: number }
-  | { type: 'remove-filter'; id: number }
-  | { type: 'filter-mode'; mode: 'and' | 'or'; groupId?: number }
-  | { type: 'clear-filters' }
   | { type: 'reset-query' }
   | { type: 'sort'; field: ExperimentSort['field'] }
   | { type: 'toggle-column'; propertyId: PropertyId }
@@ -62,15 +39,10 @@ export type WorkspaceAction =
 export function createWorkspaceState(properties: readonly PropertyDefinition[]): WorkspaceState {
   return {
     activeView: 'explore',
-    chartAxes: defaultChartAxes(properties),
-    chartMode: '2d',
-    chartZ: defaultChartZ(properties),
-    chartCamera: DEFAULT_ORBIT_CAMERA,
+    ...createChartConfiguration(properties),
     plotFilter: null,
     search: '',
-    filters: [],
-    filterMode: 'and',
-    nextFilterId: 1,
+    ...createFilterEditorState(),
     sort: { field: 'id', direction: 'asc' },
     visibleColumns: properties.filter((property) => property.group === 'outputs').map((property) => property.id),
     selectedIds: [],
@@ -81,7 +53,7 @@ export function createWorkspaceState(properties: readonly PropertyDefinition[]):
 }
 
 export function getFilterTree(state: WorkspaceState): AppliedFilterGroup {
-  return { id: 0, operator: state.filterMode, filters: state.filters }
+  return getFilterEditorTree(state)
 }
 
 /** Keep the UI and its integration tests on the same query-construction path. */
@@ -99,11 +71,11 @@ export function getWorkspaceQuery(state: WorkspaceState, { includePlotFilter = t
 export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
     case 'view': return { ...state, activeView: action.view }
-    case 'chart-mode': return { ...state, chartMode: action.mode }
-    case 'chart-z': return { ...state, chartZ: action.propertyId }
-    case 'chart-camera': return { ...state, chartCamera: normalizeCamera(action.camera) }
-    case 'chart-axis': return { ...state, chartAxes: { ...state.chartAxes, [action.axis]: action.propertyId } }
-    case 'swap-chart-axes': return { ...state, chartAxes: { x: state.chartAxes.y, y: state.chartAxes.x } }
+    case 'chart-mode':
+    case 'chart-z':
+    case 'chart-camera':
+    case 'chart-axis':
+    case 'swap-chart-axes': return reduceChartConfiguration(state, action)
     case 'set-plot-filter': return !action.filter || isCartesianRange(action.filter.range)
       ? { ...state, plotFilter: action.filter }
       : state
@@ -113,31 +85,10 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     case 'differences-only': return { ...state, differencesOnly: action.value }
     case 'search': return { ...state, search: action.value }
     case 'add-filter':
-    case 'add-filter-group': {
-      const root = getFilterTree(state)
-      const updated = updateFilterGroup(root, action.groupId ?? 0, (group) => ({
-        ...group,
-        filters: [...group.filters, action.type === 'add-filter'
-          ? { id: state.nextFilterId, condition: action.condition }
-          : { id: state.nextFilterId, operator: group.operator === 'and' ? 'or' : 'and', filters: [] }],
-      }))
-      if (updated === root) return state
-      return { ...state, filters: updated.filters, nextFilterId: state.nextFilterId + 1 }
-    }
-    case 'update-filter': {
-      const root = getFilterTree(state)
-      const updated = updateFilterCondition(root, action.id, action.condition)
-      return updated === root ? state : { ...state, filters: updated.filters }
-    }
-    case 'remove-filter': return {
-      ...state,
-      filters: removeFilterNode(getFilterTree(state), action.id).filters,
-    }
-    case 'filter-mode': {
-      const root = updateFilterGroup(getFilterTree(state), action.groupId ?? 0,
-        (group) => ({ ...group, operator: action.mode }))
-      return { ...state, filters: root.filters, filterMode: root.operator }
-    }
+    case 'add-filter-group':
+    case 'update-filter':
+    case 'remove-filter':
+    case 'filter-mode': return reduceFilterEditor(state, action)
     case 'clear-filters': return { ...state, filters: [], plotFilter: null }
     case 'reset-query': return { ...state, search: '', filters: [], plotFilter: null }
     case 'sort': return {

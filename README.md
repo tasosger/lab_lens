@@ -10,7 +10,7 @@ Above-average badges use green gradients and below-average badges use red. The s
 
 ## Getting started
 
-Use Node.js 24.12 or later. Tests run TypeScript directly with Node's built-in test runner.
+Use Node.js 24.12 or later within the 24.x release line. Tests run TypeScript directly with Node's built-in test runner.
 
 ```sh
 npm install
@@ -39,11 +39,21 @@ Remove experiments from their column headers. Removing the baseline selects the 
 
 ## Exploring charts
 
-Open **Charts** in the sidebar and choose an input or output for each axis. The first plot shows Oven Temperature against Tensile Strength. **Swap axes** reverses them. Changing axes redraws the scatterplot immediately; search and nested filters are shared with the experiment table. Axis choices survive switching views.
+Open **Charts**, choose a **Chart type**, and choose an input or output for each axis. The first plot is a 2D scatterplot showing Oven Temperature against Tensile Strength. **Swap axes** exchanges X/Y, or X/Z and Y/Z in 3D. Changing axes redraws immediately; search and nested filters are shared with the experiment table. Axis choices survive switching views.
+
+Choose **3D scatterplot** to add a Z axis (Elongation by default). Drag to rotate and tilt, scroll over the plot to zoom, and double-click the background to reset the camera. All three values appear in point tooltips and the plotted-data table. Chart type, Z-axis choice, and camera settings survive view changes. Existing plot-range filters still apply; switch to 2D to draw another range.
 
 Hover or focus a point to inspect its values; click or press Enter/Space to open the existing details drawer. Selected experiments have darker, outlined markers. **View plotted data** lists every point, including overlapping experiments, with buttons to open their details. Missing axis values are omitted and counted, while zeros remain valid coordinates. Empty results explain how to recover. Histograms are a later extension.
 
 The reusable plotting components, numeric scales, axes, responsive frame, and data table live in `src/charts/`. Experiment-specific defaults and the record-to-point adapter live in `src/features/charts/`. See [chart architecture](doc/charts.md) for the extension points.
+
+## Commands
+
+## Saved dashboards
+
+Open **Dashboards** in the sidebar for the default **Experiment overview**, which starts with two plots. Create a dashboard, add plots, choose their properties and 2D/3D mode, and use **Save dashboard** to keep its configuration after a refresh. Rename, duplicate, delete, reorder, and choose half/full-width plots. The dashboard list can sort by name or last saved time.
+
+Search and nested filters apply to every plot in that dashboard. Brushing a 2D plot filters the other plots; the source plot retains context points for changing its range. Dashboard filters are independent of Explore/Charts. Unsaved drafts survive navigation within the app; the save status indicates whether changes have been written to this browser's local storage. Storage failures are shown without overwriting existing data or reporting a successful save. See [dashboard architecture](doc/dashboards.md).
 
 ## Commands
 
@@ -53,6 +63,33 @@ The reusable plotting components, numeric scales, axes, responsive frame, and da
 - `npm test`: type-check and run the data and workspace state tests.
 - `npm run test:watch`: rerun tests as files change; use `npm test` for type checking.
 - `npm run preview`: preview the production build locally after building it.
+
+## Deploying to Vercel
+
+The app deploys as a static Vite site. Its JSON data is bundled into the browser build; no server, database service, or environment variables are required.
+
+`vercel.json` sets the Vite preset, installs locked dependencies with `npm ci`, runs lint and tests before the production build, and publishes `dist/`. Its SPA rewrite serves `index.html` for client-side URLs. The package engine range keeps builds on Node.js 24, with a minimum of 24.12.
+
+For automatic deployments from the existing GitHub repository:
+
+1. Commit and push the deployment configuration and any app changes you want to publish to `tasosger/lab_lens`.
+2. Sign in at [Vercel New Project](https://vercel.com/new), connect GitHub if needed, and import `tasosger/lab_lens`.
+3. Use `lab-lens` as the project name, **Vite** as the framework, and **`./`** as the root directory. The repository already starts inside the app; do not enter `experiment-explorer` as a subdirectory.
+4. Use Node.js **24.x** and the build/install/output settings from `vercel.json`. No environment variables need to be added.
+5. Deploy and confirm the production branch is **`master`**. Later pushes to this branch update production; other branches create previews.
+
+Alternatively, create a preview directly from this app directory:
+
+```sh
+npx vercel login
+npx vercel
+```
+
+Choose your Vercel account or team and link the existing `lab-lens` project, or create it if it does not exist. Use `./` for the code directory. The default CLI deployment is a preview; `npx vercel --prod` publishes to production. For Git-based automatic deployments, connect the GitHub repository in the project's settings if it was created through the CLI.
+
+`.vercel/` contains local project-link information and is ignored by Git. `DESIGN.md` stays locally ignored by Git and is explicitly excluded from CLI uploads in `.vercelignore`.
+
+References: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), [Git deployments](https://vercel.com/docs/git), and [supported Node.js versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions).
 
 ## Structure
 

@@ -22,6 +22,14 @@ export function cameraAfterDrag(camera: OrbitCamera, dx: number, dy: number): Or
   return normalizeCamera({ ...camera, yaw: camera.yaw + dx * 0.5, pitch: camera.pitch + dy * 0.4 })
 }
 
+/** Normalize pixel, line, and page wheel deltas and bound unusually large scroll steps. */
+export function cameraAfterWheel(camera: OrbitCamera, deltaY: number, deltaMode = 0): OrbitCamera {
+  if (!Number.isFinite(deltaY) || deltaY === 0) return camera
+  const pixels = deltaY * (deltaMode === 1 ? 16 : deltaMode === 2 ? 800 : 1)
+  const delta = Math.max(-240, Math.min(240, pixels))
+  return normalizeCamera({ ...camera, zoom: camera.zoom * Math.exp(-delta * 0.0015) })
+}
+
 export function isRotationDrag(dx: number, dy: number): boolean {
   return Math.hypot(dx, dy) >= 4
 }

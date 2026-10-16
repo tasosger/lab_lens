@@ -1,6 +1,5 @@
 import { useId, useState } from 'react'
 import { formatTick, numericDomain, numericTicks } from './numericScale'
-import { OrbitControls } from './OrbitControls'
 import { create3DProjector, projectUnit3D, type OrbitCamera, type ScatterPoint3D, type Vector3 } from './projection3D'
 import type { ScatterPlotProps } from './ScatterPlot'
 import { useChartSize } from './useChartSize'
@@ -28,7 +27,7 @@ function axisCoordinate(axis: number, value: number): Vector3 {
 export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds = [], matchingIds, camera, onCameraChange, formatValue, onPointActivate }: ScatterPlot3DProps) {
   const id = useId()
   const { container, width, height } = useChartSize()
-  const { rotating, handlers } = useOrbitDrag(camera, onCameraChange)
+  const { canvas, rotating, handlers } = useOrbitDrag(camera, onCameraChange)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const activeId = hoveredId ?? focusedId
@@ -47,14 +46,10 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
   const origin = unit([-1, -1, -1])
 
   return (
-    <>
-      <div className="orbit-axis-legend">
-        {axes.map((axis, index) => <span key={index} className={`orbit-axis-${index}`}><strong>{axisNames[index]}</strong> {axis.label}</span>)}
-      </div>
       <div ref={container} className={`cartesian-chart orbit-chart${rotating ? ' orbit-chart-rotating' : ''}`}>
-        <svg viewBox={`0 0 ${width} ${height}`} role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} {...handlers}>
-          <title id={`${id}-title`}>3D scatterplot: {xLabel}, {yLabel}, {zLabel}</title>
-          <desc id={`${id}-description`}>Drag to rotate, or use the rotation, tilt, and zoom sliders. Hover or focus points for values; click or press Enter to open details. The data table includes every matching point.</desc>
+        <svg ref={canvas} viewBox={`0 0 ${width} ${height}`} role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} {...handlers}>
+          <title id={`${id}-title`}>{`3D scatterplot: ${xLabel}, ${yLabel}, ${zLabel}`}</title>
+          <desc id={`${id}-description`}>Drag to rotate and tilt. Scroll to zoom. Double-click the background to reset the view. Hover or focus points for values; click or press Enter to open details. The data table includes every matching point.</desc>
           <g aria-hidden="true" className="orbit-grid">
             <polygon points={[0, 1, 3, 2].map((index) => { const point = unit(corners[index]!); return `${point.x},${point.y}` }).join(' ')} />
             {edges.map(([a, b]) => {
@@ -83,7 +78,7 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
             <g key={point.id} transform={`translate(${position.x} ${position.y})`}
               className={`scatter-point${highlighted.has(point.id) ? ' scatter-point-selected' : ''}${activeId === point.id && !rotating ? ' scatter-point-active' : ''}${matching && !matching.has(point.id) ? ' scatter-point-excluded' : ''}`}
               role="button" tabIndex={0}
-              aria-label={`${point.label}. ${highlighted.has(point.id) ? 'Selected. ' : ''}${xLabel}: ${formatValue(point.x)}. ${yLabel}: ${formatValue(point.y)}. ${zLabel}: ${formatValue(point.z)}. Open details.`}
+              aria-label={`${point.label}. ${highlighted.has(point.id) ? 'Selected. ' : ''}${matching && !matching.has(point.id) ? 'Outside plot range. ' : ''}${xLabel}: ${formatValue(point.x)}. ${yLabel}: ${formatValue(point.y)}. ${zLabel}: ${formatValue(point.z)}. Open details.`}
               aria-describedby={!rotating && activeId === point.id ? `${id}-tooltip` : undefined}
               onPointerEnter={() => setHoveredId(point.id)} onPointerLeave={() => setHoveredId(null)}
               onFocus={() => setFocusedId(point.id)} onBlur={() => setFocusedId(null)}
@@ -105,7 +100,5 @@ export function ScatterPlot3D({ points, xLabel, yLabel, zLabel, highlightedIds =
           </div>
         )}
       </div>
-      <OrbitControls camera={camera} onChange={onCameraChange} />
-    </>
   )
 }
